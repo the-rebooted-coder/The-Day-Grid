@@ -1,7 +1,6 @@
-# The Grid.
 Time is linear. Your perception of it shouldn't be.
 
-We built a Python script that draws circles. It runs on a server you don't own, updates while you sleep, and generates a visualisation of the only non-renewable resource you have: **Time.**
+I built a Python script that draws circles. It runs on a server you don't own, updates while you sleep, and generates a visualisation of the only non-renewable resource you have: **Time.**
 
 It’s minimalist. It’s automated. It’s better than your calendar.
 
