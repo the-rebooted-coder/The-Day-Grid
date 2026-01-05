@@ -1,6 +1,6 @@
 # Daily Year Progress Widget 📅
 
-![Generate Daily Dot Image](https://github.com/USERNAME/REPO_NAME/actions/workflows/generate_daily_image.yml/badge.svg)
+Generate Daily Dot Image
 
 An automated Python script that generates a minimalist visualization of the current year. It updates every night at **12:00 AM IST** via GitHub Actions and hosts the result on GitHub Pages.
 
