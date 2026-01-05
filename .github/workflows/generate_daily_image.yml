@@ -1,9 +1,9 @@
 name: Generate Daily Dot Image
 
 on:
-  # Schedule to run at 00:00 UTC every day
+  # Schedule to run at 18:30 UTC daily (which is 00:00 IST)
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '30 18 * * *'
   # Allow manual triggering from the Actions tab for testing
   workflow_dispatch:
 
