@@ -24,7 +24,7 @@ DOT_RADIUS = 18
 DOT_PADDING = 22
 
 # --- Date Calculations ---
-now = datetime.datetime.utcnow()
+now = datetime.datetime.now(datetime.timezone.utc)
 current_year = now.year
 is_leap = calendar.isleap(current_year)
 total_days_in_year = 366 if is_leap else 365
