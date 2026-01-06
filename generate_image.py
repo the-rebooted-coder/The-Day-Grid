@@ -113,6 +113,12 @@ draw.text((text_x, text_y), bottom_text, font=font_small, fill=DOT_COLOR_ACTIVE)
 BAR_LENGTH = 10
 progress_ratio = current_day_of_year / total_days_in_year
 filled_blocks = int(progress_ratio * BAR_LENGTH)
+
+# --- The "Generous" Fix: Force at least 1 block if year has started ---
+if current_day_of_year > 0 and filled_blocks == 0:
+    filled_blocks = 1
+# ----------------------------------------------------------------------
+
 empty_blocks = BAR_LENGTH - filled_blocks
 
 # Construct the ASCII string
