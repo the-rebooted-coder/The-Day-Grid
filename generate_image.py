@@ -150,4 +150,4 @@ for i in range(BAR_BLOCKS):
 
 # Save
 img.save("daily_status.png")
-print("Successfully saved daily_status.png"
+print("Successfully saved daily_status.png")
