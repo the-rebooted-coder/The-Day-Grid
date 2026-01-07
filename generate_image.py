@@ -23,9 +23,12 @@ GRID_ROWS = 25
 DOT_RADIUS = 18
 DOT_PADDING = 22
 
-# --- Date Calculations ---
-# Using timezone-aware UTC to avoid warnings
-now = datetime.datetime.now(datetime.timezone.utc)
+# --- Date Calculations (FIXED FOR IST) ---
+# We force the script to look at Indian Standard Time (UTC + 5:30)
+# This ensures that when GitHub runs at 18:30 UTC, the script calculates for 00:00 IST (Next Day)
+ist_offset = datetime.timedelta(hours=5, minutes=30)
+now = datetime.datetime.now(datetime.timezone.utc) + ist_offset
+
 current_year = now.year
 is_leap = calendar.isleap(current_year)
 total_days_in_year = 366 if is_leap else 365
@@ -53,7 +56,7 @@ if env_dates:
         except ValueError:
             pass
 
-print(f"Generating image for Day {current_day_of_year}.")
+print(f"Generating image for Day {current_day_of_year} (IST).")
 
 # --- Image Generation ---
 
@@ -106,7 +109,7 @@ text_y = IMAGE_HEIGHT - 220 # Moved up slightly to make room for bar
 draw.text((text_x, text_y), bottom_text, font=font_small, fill=DOT_COLOR_ACTIVE)
 
 # 3. Draw Progress Bar (Geometrically)
-# Instead of ASCII text, we draw rectangles. It looks better and never fails.
+# We draw rounded rectangles manually. This is 100% reliable compared to fonts.
 
 BAR_TOTAL_WIDTH = 600   # Total width of the progress bar in pixels
 BAR_HEIGHT = 24         # Height of the blocks
@@ -124,8 +127,6 @@ filled_blocks = int(progress_ratio * BAR_BLOCKS)
 # The "Generous" Fix: If year has started, show at least 1 block
 if current_day_of_year > 0 and filled_blocks == 0:
     filled_blocks = 1
-
-print(f"DEBUG: Filled Blocks: {filled_blocks} / 10")
 
 # Center the bar horizontally
 bar_start_x = (IMAGE_WIDTH - BAR_TOTAL_WIDTH) / 2
@@ -149,4 +150,4 @@ for i in range(BAR_BLOCKS):
 
 # Save
 img.save("daily_status.png")
-print("Successfully saved daily_status.png")
+print("Successfully saved daily_status.png"
