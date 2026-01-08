@@ -201,7 +201,7 @@ HTML_DASHBOARD = """
         <div class="shortcut-section">
             <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: #ccc;">Step 2: Install the Shortcut.</p>
             <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: #888; line-height: 1.4;">
-                Since you probably need hand-holding: Install the shortcut. <strong>Tap the three dots (...)</strong> to edit it, paste the URL where indicated, and follow the comments. Don't mess it up.
+                Since you probably need hand-holding: <strong>First add the shortcut, then click on the three dots (...) to edit it.</strong> Paste the URL where indicated. Don't mess it up.
             </p>
             <a href="https://www.icloud.com/shortcuts/99a190f4001844f9ade585fc8eafd47e" class="shortcut-btn" target="_blank">Install iOS Shortcut</a>
         </div>
