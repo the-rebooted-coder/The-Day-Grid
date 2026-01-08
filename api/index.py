@@ -38,7 +38,7 @@ THEMES = {
 # Font Path
 FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts/Roboto-Regular.ttf')
 
-# --- THE DASHBOARD (Date Picker UI) ---
+# --- THE DASHBOARD (With Info Modal) ---
 HTML_DASHBOARD = """
 <!DOCTYPE html>
 <html lang="en">
@@ -53,8 +53,14 @@ HTML_DASHBOARD = """
     <style>
         body { background: #1c1c1e; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 40px 20px; box-sizing: border-box; }
         h1 { font-weight: 900; letter-spacing: -1px; margin-bottom: 5px; font-size: 2.5rem; text-align: center; }
-        p.subtitle { color: #888; max-width: 320px; text-align: center; margin-bottom: 30px; line-height: 1.5; font-size: 0.95rem; }
         
+        .subtitle-container { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 30px; }
+        p.subtitle { color: #888; text-align: center; line-height: 1.5; font-size: 0.95rem; margin: 0; }
+        
+        /* Info Button */
+        .info-btn { background: none; border: 1px solid #444; color: #888; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-family: serif; font-weight: bold; }
+        .info-btn:hover { border-color: #ff693c; color: #ff693c; }
+
         /* Section Headers */
         h2 { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: #666; margin: 20px 0 10px 0; width: 100%; max-width: 330px; text-align: left; border-bottom: 1px solid #333; padding-bottom: 5px; }
 
@@ -94,13 +100,31 @@ HTML_DASHBOARD = """
         
         footer { margin-top: 60px; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; }
         
+        /* MODAL STYLES */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
+        .modal { background: #1c1c1e; border: 1px solid #333; padding: 25px; border-radius: 16px; width: 90%; max-width: 320px; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .modal h3 { margin-top: 0; color: white; text-align: center; }
+        .color-legend { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+        .legend-item { display: flex; align-items: center; gap: 15px; font-size: 0.95rem; color: #ccc; }
+        .dot { width: 16px; height: 16px; border-radius: 50%; display: inline-block; }
+        .dot.white { background: #fff; border: 1px solid #444; }
+        .dot.orange { background: #ff693c; box-shadow: 0 0 8px rgba(255, 105, 60, 0.6); }
+        .dot.yellow { background: #ffd700; box-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
+        .dot.gray { background: #444446; }
+        .close-modal { background: #333; border: none; color: white; width: 100%; padding: 12px; border-radius: 10px; margin-top: 25px; cursor: pointer; font-weight: 600; }
+        .close-modal:hover { background: #444; }
+
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
     <h1>The Grid.</h1>
-    <p class="subtitle">Visualize your year.<br>Add your special dates below.</p>
+    
+    <div class="subtitle-container">
+        <p class="subtitle">Visualize your year.<br>Add your special dates below.</p>
+        <button class="info-btn" onclick="openModal()" title="What do the colors mean?">i</button>
+    </div>
     
     <div id="date-list">
         <div class="date-row">
@@ -137,8 +161,54 @@ HTML_DASHBOARD = """
 
     <footer>&lt;/&gt; with ❤️ by Spandan.</footer>
 
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal">
+            <h3>The Chroma Key</h3>
+            <div class="color-legend">
+                <div class="legend-item">
+                    <span class="dot white"></span>
+                    <span><strong>The Past:</strong> Days gone.</span>
+                </div>
+                <div class="legend-item">
+                    <span class="dot orange"></span>
+                    <span><strong>The Present:</strong> Today. Panic accordingly.</span>
+                </div>
+                <div class="legend-item">
+                    <span class="dot yellow"></span>
+                    <span><strong>The Special:</strong> Dates you added.</span>
+                </div>
+                <div class="legend-item">
+                    <span class="dot gray"></span>
+                    <span><strong>The Future:</strong> Hasn't happened yet.</span>
+                </div>
+            </div>
+            <button class="close-modal" onclick="toggleModal(false)">Got it</button>
+        </div>
+    </div>
+
     <script>
         let selectedTheme = 'dark';
+
+        // Modal Logic
+        function openModal() { toggleModal(true); }
+        function closeModal(e) { if(e.target === document.getElementById('modalOverlay')) toggleModal(false); }
+        
+        function toggleModal(show) {
+            const overlay = document.getElementById('modalOverlay');
+            const modal = overlay.querySelector('.modal');
+            
+            if (show) {
+                overlay.style.display = 'flex';
+                // Trigger reflow
+                void overlay.offsetWidth;
+                overlay.style.opacity = '1';
+                modal.style.transform = 'scale(1)';
+            } else {
+                overlay.style.opacity = '0';
+                modal.style.transform = 'scale(0.9)';
+                setTimeout(() => { overlay.style.display = 'none'; }, 300);
+            }
+        }
 
         // Add a new date input row
         function addDate() {
@@ -155,11 +225,9 @@ HTML_DASHBOARD = """
         // Remove a date input row
         function removeDate(btn) {
             const container = document.getElementById('date-list');
-            // Don't remove the last one remaining
             if (container.children.length > 1) {
                 btn.parentElement.remove();
             } else {
-                // If it's the last one, just clear the value
                 btn.parentElement.querySelector('input').value = '';
             }
         }
@@ -176,10 +244,7 @@ HTML_DASHBOARD = """
 
             inputs.forEach(input => {
                 if (input.value) {
-                    // input.value is YYYY-MM-DD
-                    // We only need MM-DD for the backend
                     const parts = input.value.split('-'); 
-                    // parts[0] is Year, parts[1] is Month, parts[2] is Day
                     if (parts.length === 3) {
                         dateArray.push(`${parts[1]}-${parts[2]}`);
                     }
@@ -189,7 +254,6 @@ HTML_DASHBOARD = """
             const val = dateArray.join(',');
             const baseUrl = window.location.origin + "/api/image";
             
-            // Build URL parameters
             const params = new URLSearchParams();
             if (val) params.append('dates', val);
             params.append('theme', selectedTheme);
@@ -200,7 +264,6 @@ HTML_DASHBOARD = """
             document.getElementById('previewLink').href = fullUrl;
             document.getElementById('result').style.display = "block";
             
-            // Scroll result into view
             document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
         }
 
