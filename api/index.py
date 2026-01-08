@@ -38,7 +38,7 @@ THEMES = {
 # Font Path
 FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts/Roboto-Regular.ttf')
 
-# --- THE DASHBOARD (Clean UI + Dbrand Tone) ---
+# --- THE DASHBOARD ---
 HTML_DASHBOARD = """
 <!DOCTYPE html>
 <html lang="en">
@@ -164,7 +164,7 @@ HTML_DASHBOARD = """
         </div>
     </div>
 
-    <button class="generate-btn" onclick="generate()">Generate Link</button>
+    <button class="generate-btn" id="gen-btn" onclick="generate()">Get The Grid</button>
 
     <div class="result" id="result">
         <p style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Step 1: Copy this URL.</p>
@@ -216,12 +216,16 @@ HTML_DASHBOARD = """
         // Toggle Customisation Section
         function toggleCustomise(trigger) {
             const section = document.getElementById('custom-section');
+            const btn = document.getElementById('gen-btn');
+            
             if (section.style.display === 'block') {
                 section.style.display = 'none';
                 trigger.classList.remove('active');
+                btn.innerText = "Get The Grid";
             } else {
                 section.style.display = 'block';
                 trigger.classList.add('active');
+                btn.innerText = "Generate Link";
             }
         }
 
