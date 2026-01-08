@@ -62,8 +62,11 @@ HTML_DASHBOARD = """
         .info-btn:hover { border-color: #ff693c; color: #ff693c; }
 
         /* Main Button (Default) */
-        button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; max-width: 330px; transition: opacity 0.2s; box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
+        button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; max-width: 330px; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
         button.generate-btn:hover { opacity: 0.9; }
+        
+        /* Success State for Button */
+        button.generate-btn.success { background: #34c759 !important; box-shadow: 0 4px 15px rgba(52, 199, 89, 0.3); transform: scale(0.98); }
 
         /* Separator */
         .separator { display: flex; align-items: center; justify-content: center; width: 100%; max-width: 330px; margin: 25px 0; color: #555; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
@@ -107,9 +110,6 @@ HTML_DASHBOARD = """
         /* Result Area */
         .result { margin-top: 30px; display: none; text-align: center; animation: slideUp 0.5s ease; width: 100%; max-width: 330px; border-top: 1px solid #333; padding-top: 20px; }
         
-        /* The Default "Link Copied" Message */
-        .default-success { color: #ff693c; font-weight: bold; font-size: 1.1rem; margin-bottom: 20px; display: none; }
-
         /* The Custom "URL Box" (Hidden for default) */
         .custom-url-display { display: none; }
 
@@ -186,10 +186,7 @@ HTML_DASHBOARD = """
     </div>
 
     <div class="result" id="result">
-        <div id="default-success" class="default-success">
-            ✓ Link Copied. We saved you a click.
-        </div>
-
+        
         <div id="custom-url-display" class="custom-url-display">
             <p style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Step 1: Copy this URL.</p>
             <div class="url-container">
@@ -288,23 +285,33 @@ HTML_DASHBOARD = """
             document.getElementById('lbl-light').className = theme === 'light' ? 'theme-option active' : 'theme-option';
         }
 
-        // GENERATE DEFAULT (Primary Button - Auto Copy, No Preview)
+        // GENERATE DEFAULT (Primary Button - Auto Copy)
         function generateDefault() {
             const baseUrl = window.location.origin + "/api/image";
             const fullUrl = baseUrl + "?theme=dark";
+            const btn = document.getElementById('default-btn');
             
             navigator.clipboard.writeText(fullUrl).then(() => {
-                // Show Result Container
+                // BUTTON ANIMATION
+                const originalText = btn.innerText;
+                btn.innerText = "Link Copied";
+                btn.classList.add("success");
+                btn.disabled = true;
+
+                // Show Result Container (Step 2 Only)
                 document.getElementById('result').style.display = "block";
-                
-                // Show ONLY the success message
-                document.getElementById('default-success').style.display = "block";
                 document.getElementById('custom-url-display').style.display = "none";
-                
                 document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
 
+                // Revert Button Gracefully
+                setTimeout(() => { 
+                    btn.innerText = originalText; 
+                    btn.classList.remove("success");
+                    btn.disabled = false;
+                }, 2000);
+
             }).catch(err => {
-                // Fallback: If clipboard fails, we MUST show the manual box
+                // Fallback: If clipboard fails, show manual box
                 generateCustom();
             });
         }
@@ -335,8 +342,7 @@ HTML_DASHBOARD = """
             // Show Result Container
             document.getElementById('result').style.display = "block";
             
-            // Show ONLY the URL Box
-            document.getElementById('default-success').style.display = "none";
+            // Show the URL Box
             document.getElementById('custom-url-display').style.display = "block";
             
             document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
