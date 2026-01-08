@@ -10,8 +10,6 @@ app = Flask(__name__)
 # --- Configuration & Themes ---
 IMAGE_WIDTH = 1170
 IMAGE_HEIGHT = 2532
-
-# Default (Year) Grid Settings
 GRID_COLS = 15
 GRID_ROWS = 25
 DOT_RADIUS = 18
@@ -449,10 +447,7 @@ def generate_grid():
         last_day = calendar.monthrange(current_year, now.month)[1]
         end_date = datetime.date(current_year, now.month, last_day)
         
-        # Month View (Revised Math)
-        # 7 cols x 70px diam = 490px
-        # 6 gaps x 45px = 270px
-        # Total = 760px (Fits well in 1170)
+        # Month View (Revised Math for Center)
         grid_cols = 7
         grid_rows = 5
         dot_radius = 35 
@@ -468,10 +463,7 @@ def generate_grid():
         last_day_q = calendar.monthrange(current_year, end_month)[1]
         end_date = datetime.date(current_year, end_month, last_day_q)
         
-        # Quarter View (Revised Math)
-        # 10 cols x 50px diam = 500px
-        # 9 gaps x 25px = 225px
-        # Total = 725px (Fits well)
+        # Quarter View
         grid_cols = 10
         grid_rows = 10 
         dot_radius = 25 
@@ -482,10 +474,7 @@ def generate_grid():
         start_date = now.date() - datetime.timedelta(days=now.weekday())
         end_date = start_date + datetime.timedelta(days=13)
         
-        # Fortnight View (Revised Math)
-        # 7 cols x 90px diam = 630px
-        # 6 gaps x 50px = 300px
-        # Total = 930px (Fits comfortably)
+        # Fortnight View
         grid_cols = 7
         grid_rows = 2
         dot_radius = 45 
@@ -535,12 +524,20 @@ def generate_grid():
         font_signature = font_small
 
     # --- Draw Grid ---
-    total_grid_w = (grid_cols * (dot_radius * 2)) + ((grid_cols - 1) * dot_spacing)
-    total_grid_h = (grid_rows * (dot_radius * 2)) + ((grid_rows - 1) * dot_spacing)
+    DOT_SPACING = dot_spacing
+    total_grid_w = (grid_cols * (dot_radius * 2)) + ((grid_cols - 1) * DOT_SPACING)
+    total_grid_h = (grid_rows * (dot_radius * 2)) + ((grid_rows - 1) * DOT_SPACING)
     
     start_x = (IMAGE_WIDTH - total_grid_w) // 2
-    # Vertically center grid loosely
-    start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2) - 200 
+    
+    # VERTICAL ALIGNMENT FIX
+    if mode_param == 'year':
+        # Shift up for the tall year grid
+        start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2) - 200 
+    else:
+        # True Center for smaller grids (Month, Quarter, Fortnight)
+        start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2)
+    
     if start_y < 200: start_y = 200
 
     current_iter_date = start_date
@@ -560,8 +557,8 @@ def generate_grid():
             else:
                 color = palette['INACTIVE']
 
-            x = start_x + col * (dot_radius * 2 + dot_spacing)
-            y = start_y + row * (dot_radius * 2 + dot_spacing)
+            x = start_x + col * (dot_radius * 2 + DOT_SPACING)
+            y = start_y + row * (dot_radius * 2 + DOT_SPACING)
             draw.ellipse((x, y, x + dot_radius * 2, y + dot_radius * 2), fill=color)
             
             current_iter_date += datetime.timedelta(days=1)
@@ -586,7 +583,6 @@ def generate_grid():
     BAR_BLOCKS = 10         
     BLOCK_GAP = 12          
     
-    # Avoid division by zero
     if total_days > 0:
         progress_ratio = days_passed / total_days
     else:
