@@ -1,21 +1,19 @@
-from flask import Flask, send_file, request, make_response
+from flask import Flask, send_file, request
 import datetime
 import calendar
 from PIL import Image, ImageDraw, ImageFont
 import io
 import os
+import math
 
 app = Flask(__name__)
 
 # --- Configuration & Themes ---
+# Canvas Size
 IMAGE_WIDTH = 1170
 IMAGE_HEIGHT = 2532
-GRID_COLS = 15
-GRID_ROWS = 25
-DOT_RADIUS = 18
-DOT_PADDING = 15
 
-# Define Color Palettes
+# Theme Palettes
 THEMES = {
     'dark': {
         'BG': (28, 28, 30),
@@ -53,7 +51,6 @@ HTML_DASHBOARD = """
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%231c1c1e%22/><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23ff693c%22/></svg>">
 
     <style>
-        /* SCROLL FIX */
         body { 
             background: #1c1c1e; 
             color: white; 
@@ -68,7 +65,6 @@ HTML_DASHBOARD = """
             overflow-x: hidden; 
         }
 
-        /* HEADER SECTION */
         .header-section { margin-bottom: 30px; text-align: center; width: 100%; }
         h1 { font-weight: 900; letter-spacing: -1px; margin: 0 0 5px 0; font-size: 2.5rem; }
         .subtitle-container { display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -77,15 +73,11 @@ HTML_DASHBOARD = """
         .info-btn { background: none; border: 1px solid #444; color: #888; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-family: serif; font-weight: bold; }
         .info-btn:hover { border-color: #ff693c; color: #ff693c; }
 
-        /* CONTENT WRAPPER */
         .content-wrapper { flex-grow: 1; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 330px; margin-bottom: 40px; }
 
-        /* Buttons */
         button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
         button.generate-btn:hover { opacity: 0.9; }
         button.generate-btn.success { background: #34c759 !important; box-shadow: 0 4px 15px rgba(52, 199, 89, 0.3); transform: scale(0.98); }
-        
-        /* Disabled State */
         button.generate-btn:disabled { background: #333 !important; color: #666 !important; box-shadow: none !important; cursor: not-allowed; opacity: 1; }
 
         .separator { display: flex; align-items: center; justify-content: center; width: 100%; margin: 25px 0; color: #555; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
@@ -100,12 +92,11 @@ HTML_DASHBOARD = """
         
         h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #666; margin: 0 0 10px 0; }
 
-        /* Form Elements */
         #date-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
         .date-row { display: flex; gap: 10px; align-items: center; }
         
-        input[type="date"], input[type="text"] { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; color-scheme: dark; width: 100%; box-sizing: border-box; }
-        input[type="date"]:focus, input[type="text"]:focus { border-color: #ff693c; }
+        input[type="date"], input[type="text"], select { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; color-scheme: dark; width: 100%; box-sizing: border-box; }
+        input[type="date"]:focus, input[type="text"]:focus, select:focus { border-color: #ff693c; }
         
         .btn-icon { background: #333; border: 1px solid #444; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 18px; flex-shrink: 0; }
         .btn-icon:hover { background: #444; }
@@ -121,7 +112,6 @@ HTML_DASHBOARD = """
         button.generate-custom-btn { background: #333; color: white; border: 1px solid #555; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; transition: all 0.2s; }
         button.generate-custom-btn:hover { background: #ff693c; border-color: #ff693c; }
 
-        /* Result Area */
         .result { margin-top: 20px; display: none; text-align: center; animation: slideUp 0.5s ease; width: 100%; border-top: 1px solid #333; padding-top: 20px; }
         .default-success { color: #ff693c; font-weight: bold; font-size: 1.1rem; margin-bottom: 20px; display: none; }
         .mock-msg { color: #ff453a; font-size: 0.85rem; margin-bottom: 20px; line-height: 1.4; display: none; border: 1px solid #ff453a; padding: 12px; border-radius: 12px; background: rgba(255, 69, 58, 0.1); text-align: left; }
@@ -135,12 +125,10 @@ HTML_DASHBOARD = """
         .shortcut-btn { background: white; color: black; display: block; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 10px; box-sizing: border-box; }
         a.preview-link { color: #ff693c; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 10px; font-size: 0.9rem; }
         
-        /* Footer */
         footer { margin-top: auto; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; padding-bottom: 10px; width: 100%; text-align: center; }
         .footer-link { color: #555; text-decoration: none; border-bottom: 1px dotted #555; transition: color 0.2s; }
         .footer-link:hover { color: #ff693c; border-color: #ff693c; }
 
-        /* Modal */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
         .modal { background: #1c1c1e; border: 1px solid #333; padding: 25px; border-radius: 16px; width: 90%; max-width: 320px; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .modal h3 { margin-top: 0; color: white; text-align: center; }
@@ -177,6 +165,16 @@ HTML_DASHBOARD = """
         </div>
 
         <div id="custom-section">
+            <h2>View Mode</h2>
+            <div style="margin-bottom: 20px;">
+                <select id="view-mode">
+                    <option value="year">Full Year (Default)</option>
+                    <option value="quarter">Current Quarter</option>
+                    <option value="month">Current Month</option>
+                    <option value="fortnight">Fortnight (14 Days)</option>
+                </select>
+            </div>
+
             <h2>Dates of Importance</h2>
             <div id="date-list">
                 <div class="date-row">
@@ -260,23 +258,18 @@ HTML_DASHBOARD = """
     </div>
 
     <script>
-        // --- PLATFORM CHECK ---
         window.onload = function() {
-            // RegEx covers iPhone, iPad, iPod, and Macintosh (macOS)
             const isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
             
             if (!isApple) {
-                // 1. Disable Main Button
                 const btn = document.getElementById('default-btn');
                 btn.innerText = "Sorry, currently available only on iOS / iPadOS";
                 btn.disabled = true;
                 
-                // 2. Hide Customisation & Separator
                 document.querySelector('.separator').style.display = 'none';
                 document.querySelector('.customise-trigger').style.display = 'none';
                 document.getElementById('custom-section').style.display = 'none';
                 
-                // 3. Force Footer to stick
                 document.querySelector('footer').style.marginTop = 'auto';
             }
         };
@@ -371,6 +364,7 @@ HTML_DASHBOARD = """
             });
 
             const sig = document.getElementById('signature').value.trim();
+            const mode = document.getElementById('view-mode').value;
             
             const val = dateArray.join(',');
             const baseUrl = window.location.origin + "/api/image";
@@ -379,9 +373,10 @@ HTML_DASHBOARD = """
             if (val) params.append('dates', val);
             params.append('theme', selectedTheme);
             if (sig) params.append('signature', sig);
+            if (mode !== 'year') params.append('mode', mode);
             
             const fullUrl = baseUrl + "?" + params.toString();
-            const isDefault = dateArray.length === 0 && selectedTheme === 'dark' && sig === '';
+            const isDefault = dateArray.length === 0 && selectedTheme === 'dark' && sig === '' && mode === 'year';
 
             if (isDefault) {
                 navigator.clipboard.writeText(fullUrl).then(() => {
@@ -427,6 +422,7 @@ def generate_grid():
     dates_param = request.args.get('dates', '')
     theme_param = request.args.get('theme', 'dark')
     signature_param = request.args.get('signature', '')
+    mode_param = request.args.get('mode', 'year')
 
     # 2. Select Theme Colors
     palette = THEMES.get(theme_param, THEMES['dark'])
@@ -435,13 +431,64 @@ def generate_grid():
     ist_offset = datetime.timedelta(hours=5, minutes=30)
     now = datetime.datetime.now(datetime.timezone.utc) + ist_offset
     current_year = now.year
-    is_leap = calendar.isleap(current_year)
-    total_days_in_year = 366 if is_leap else 365
-    current_day_of_year = now.timetuple().tm_yday
-    days_left = total_days_in_year - current_day_of_year
+    
+    # 4. Determine Grid Dimensions & Range based on Mode
+    # Default Year Logic
+    grid_cols = GRID_COLS
+    grid_rows = GRID_ROWS
+    dot_radius = DOT_RADIUS
+    
+    # Dates logic
+    if mode_param == 'month':
+        start_date = datetime.date(current_year, now.month, 1)
+        last_day = calendar.monthrange(current_year, now.month)[1]
+        end_date = datetime.date(current_year, now.month, last_day)
+        
+        # Month View (Calendar Style)
+        grid_cols = 7
+        grid_rows = 5
+        dot_radius = 35 # Big dots
+        
+    elif mode_param == 'quarter':
+        # Calculate Quarter
+        q = (now.month - 1) // 3 + 1
+        start_month = (q - 1) * 3 + 1
+        end_month = start_month + 2
+        
+        start_date = datetime.date(current_year, start_month, 1)
+        last_day_q = calendar.monthrange(current_year, end_month)[1]
+        end_date = datetime.date(current_year, end_month, last_day_q)
+        
+        # Quarter View
+        grid_cols = 10
+        grid_rows = 10 # Approx 92 days max
+        dot_radius = 25 # Medium-Big
+        
+    elif mode_param == 'fortnight':
+        # 14 Days starting from the most recent Monday
+        start_date = now.date() - datetime.timedelta(days=now.weekday())
+        end_date = start_date + datetime.timedelta(days=13)
+        
+        # Fortnight View
+        grid_cols = 7
+        grid_rows = 2
+        dot_radius = 45 # Massive dots
+        
+    else: # Year (Default)
+        start_date = datetime.date(current_year, 1, 1)
+        end_date = datetime.date(current_year, 12, 31)
+    
+    total_days = (end_date - start_date).days + 1
+    
+    # Days passed in THIS period
+    days_passed = (now.date() - start_date).days + 1
+    if days_passed < 0: days_passed = 0 # Future period
+    if days_passed > total_days: days_passed = total_days # Past period
+    
+    days_left = total_days - days_passed
 
-    # 4. Parse Special Dates
-    special_days_indices = []
+    # 5. Parse Special Dates
+    special_date_objects = []
     if dates_param:
         date_strings = dates_param.split(',')
         for d_str in date_strings:
@@ -451,14 +498,15 @@ def generate_grid():
                     m, d = int(parts[0]), int(parts[1])
                     try:
                         date_obj = datetime.date(current_year, m, d)
-                        special_days_indices.append(date_obj.timetuple().tm_yday)
+                        special_date_objects.append(date_obj)
                     except ValueError: pass
             except ValueError: pass
 
-    # 5. Generate Image
+    # 6. Generate Image
     img = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT), color=palette['BG'])
     draw = ImageDraw.Draw(img)
     
+    # Fonts
     try:
         font_small = ImageFont.truetype(FONT_PATH, 40)
     except:
@@ -470,33 +518,51 @@ def generate_grid():
         font_signature = font_small
 
     # --- Draw Grid ---
-    total_grid_width = (GRID_COLS * (DOT_RADIUS * 2)) + ((GRID_COLS - 1) * DOT_PADDING)
-    total_grid_height = (GRID_ROWS * (DOT_RADIUS * 2)) + ((GRID_ROWS - 1) * DOT_PADDING)
-    start_x = (IMAGE_WIDTH - total_grid_width) // 2
-    start_y = (IMAGE_HEIGHT - total_grid_height) // 2 + 60
+    DOT_SPACING = DOT_PADDING
+    total_grid_w = (grid_cols * (dot_radius * 2)) + ((grid_cols - 1) * DOT_SPACING)
+    total_grid_h = (grid_rows * (dot_radius * 2)) + ((grid_rows - 1) * DOT_SPACING)
+    
+    start_x = (IMAGE_WIDTH - total_grid_w) // 2
+    # Vertically center the grid loosely in the top section
+    start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2) - 200 
+    if start_y < 200: start_y = 200
 
-    dot_count = 0
-    for row in range(GRID_ROWS):
-        for col in range(GRID_COLS):
-            dot_count += 1
-            if dot_count > total_days_in_year: break
+    current_iter_date = start_date
+    
+    for row in range(grid_rows):
+        for col in range(grid_cols):
+            if current_iter_date > end_date:
+                break
+            
+            # Color Logic
+            if current_iter_date in special_date_objects:
+                color = palette['SPECIAL']
+            elif current_iter_date == now.date():
+                color = palette['ACTIVE']
+            elif current_iter_date < now.date():
+                color = palette['PASSED']
+            else:
+                color = palette['INACTIVE']
 
-            if dot_count in special_days_indices: color = palette['SPECIAL']
-            elif dot_count == current_day_of_year: color = palette['ACTIVE']
-            elif dot_count < current_day_of_year: color = palette['PASSED']
-            else: color = palette['INACTIVE']
-
-            x = start_x + col * (DOT_RADIUS * 2 + DOT_PADDING)
-            y = start_y + row * (DOT_RADIUS * 2 + DOT_PADDING)
-            draw.ellipse((x, y, x + DOT_RADIUS * 2, y + DOT_RADIUS * 2), fill=color)
+            x = start_x + col * (dot_radius * 2 + DOT_SPACING)
+            y = start_y + row * (dot_radius * 2 + DOT_SPACING)
+            draw.ellipse((x, y, x + dot_radius * 2, y + dot_radius * 2), fill=color)
+            
+            current_iter_date += datetime.timedelta(days=1)
 
     # --- Draw Bottom Info ---
-    grid_bottom_y = start_y + total_grid_height
-    bottom_text = f"{days_left}d left"
+    # Custom Text based on Mode
+    range_text = "year"
+    if mode_param == 'month': range_text = now.strftime("%b")
+    elif mode_param == 'quarter': range_text = f"Q{(now.month-1)//3 + 1}"
+    elif mode_param == 'fortnight': range_text = "period"
+    
+    bottom_text = f"{days_left}d left in {range_text}"
+    
     bbox_text = draw.textbbox((0, 0), bottom_text, font=font_small)
     text_width = bbox_text[2] - bbox_text[0]
     text_x = (IMAGE_WIDTH - text_width) / 2
-    text_y = grid_bottom_y + 50
+    text_y = start_y + total_grid_h + 80
     draw.text((text_x, text_y), bottom_text, font=font_small, fill=palette['ACTIVE'])
 
     # --- Draw Progress Bar ---
@@ -506,9 +572,11 @@ def generate_grid():
     BLOCK_GAP = 12          
     total_gap_width = (BAR_BLOCKS - 1) * BLOCK_GAP
     single_block_width = (BAR_TOTAL_WIDTH - total_gap_width) / BAR_BLOCKS
-    progress_ratio = current_day_of_year / total_days_in_year
+    
+    # Progress ratio relative to the specific period
+    progress_ratio = days_passed / total_days
     filled_blocks = int(progress_ratio * BAR_BLOCKS)
-    if current_day_of_year > 0 and filled_blocks == 0: filled_blocks = 1
+    if days_passed > 0 and filled_blocks == 0: filled_blocks = 1
 
     bar_start_x = (IMAGE_WIDTH - BAR_TOTAL_WIDTH) / 2
     bar_start_y = text_y + 60 
