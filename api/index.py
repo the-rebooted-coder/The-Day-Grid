@@ -38,7 +38,7 @@ THEMES = {
 # Font Path
 FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts/Roboto-Regular.ttf')
 
-# --- THE DASHBOARD (Dbrand Style) ---
+# --- THE DASHBOARD (Dbrand Tone + Shortcut Link) ---
 HTML_DASHBOARD = """
 <!DOCTYPE html>
 <html lang="en">
@@ -96,7 +96,13 @@ HTML_DASHBOARD = """
         .url-box { background: #000; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #ff693c; border: 1px solid #333; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .copy-btn { background: #333; border: 1px solid #444; border-radius: 8px; cursor: pointer; color: white; padding: 0 15px; font-weight: bold; transition: background 0.2s; }
         .copy-btn:hover { background: #444; }
-        a { color: #ff693c; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 10px; }
+        
+        /* Shortcut Section */
+        .shortcut-section { margin-top: 25px; background: #2c2c2e; padding: 20px; border-radius: 12px; border: 1px solid #444; }
+        .shortcut-btn { background: white; color: black; display: block; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 10px; box-sizing: border-box; }
+        .shortcut-btn:hover { background: #e0e0e0; opacity: 1; }
+
+        a.preview-link { color: #ff693c; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 10px; font-size: 0.9rem; }
         
         footer { margin-top: 60px; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; }
         
@@ -149,14 +155,22 @@ HTML_DASHBOARD = """
     <button class="generate-btn" onclick="generate()">Generate Link</button>
 
     <div class="result" id="result">
-        <p style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Your automation URL:</p>
+        <p style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Step 1: Copy this URL.</p>
         
         <div class="url-container">
             <div class="url-box" id="urlBox"></div>
             <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
         </div>
         
-        <a id="previewLink" href="#" target="_blank">Preview Wallpaper →</a>
+        <a class="preview-link" id="previewLink" href="#" target="_blank">Preview Wallpaper →</a>
+
+        <div class="shortcut-section">
+            <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: #ccc;">Step 2: Install the Shortcut.</p>
+            <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: #888; line-height: 1.4;">
+                Since you probably need hand-holding: Install the shortcut, paste the URL when asked, and stop wasting time. The rest is automatic.
+            </p>
+            <a href="https://www.icloud.com/shortcuts/99a190f4001844f9ade585fc8eafd47e" class="shortcut-btn" target="_blank">Install iOS Shortcut</a>
+        </div>
     </div>
 
     <footer>&lt;/&gt; with ❤️ by Spandan.</footer>
