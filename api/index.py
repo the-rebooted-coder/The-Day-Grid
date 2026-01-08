@@ -4,16 +4,18 @@ import calendar
 from PIL import Image, ImageDraw, ImageFont
 import io
 import os
-import math
 
 app = Flask(__name__)
 
 # --- Configuration & Themes ---
-# Canvas Size
 IMAGE_WIDTH = 1170
 IMAGE_HEIGHT = 2532
+GRID_COLS = 15
+GRID_ROWS = 25
+DOT_RADIUS = 18
+DOT_PADDING = 15
 
-# Theme Palettes
+# Define Color Palettes
 THEMES = {
     'dark': {
         'BG': (28, 28, 30),
@@ -444,10 +446,10 @@ def generate_grid():
         last_day = calendar.monthrange(current_year, now.month)[1]
         end_date = datetime.date(current_year, now.month, last_day)
         
-        # Month View (Calendar Style)
+        # Month View
         grid_cols = 7
         grid_rows = 5
-        dot_radius = 35 # Big dots
+        dot_radius = 35 
         
     elif mode_param == 'quarter':
         # Calculate Quarter
@@ -461,8 +463,8 @@ def generate_grid():
         
         # Quarter View
         grid_cols = 10
-        grid_rows = 10 # Approx 92 days max
-        dot_radius = 25 # Medium-Big
+        grid_rows = 10 
+        dot_radius = 25 
         
     elif mode_param == 'fortnight':
         # 14 Days starting from the most recent Monday
@@ -472,7 +474,7 @@ def generate_grid():
         # Fortnight View
         grid_cols = 7
         grid_rows = 2
-        dot_radius = 45 # Massive dots
+        dot_radius = 45 
         
     else: # Year (Default)
         start_date = datetime.date(current_year, 1, 1)
@@ -482,8 +484,8 @@ def generate_grid():
     
     # Days passed in THIS period
     days_passed = (now.date() - start_date).days + 1
-    if days_passed < 0: days_passed = 0 # Future period
-    if days_passed > total_days: days_passed = total_days # Past period
+    if days_passed < 0: days_passed = 0
+    if days_passed > total_days: days_passed = total_days
     
     days_left = total_days - days_passed
 
@@ -523,7 +525,7 @@ def generate_grid():
     total_grid_h = (grid_rows * (dot_radius * 2)) + ((grid_rows - 1) * DOT_SPACING)
     
     start_x = (IMAGE_WIDTH - total_grid_w) // 2
-    # Vertically center the grid loosely in the top section
+    # Vertically center grid loosely
     start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2) - 200 
     if start_y < 200: start_y = 200
 
@@ -551,7 +553,6 @@ def generate_grid():
             current_iter_date += datetime.timedelta(days=1)
 
     # --- Draw Bottom Info ---
-    # Custom Text based on Mode
     range_text = "year"
     if mode_param == 'month': range_text = now.strftime("%b")
     elif mode_param == 'quarter': range_text = f"Q{(now.month-1)//3 + 1}"
@@ -570,16 +571,19 @@ def generate_grid():
     BAR_HEIGHT = 20         
     BAR_BLOCKS = 10         
     BLOCK_GAP = 12          
-    total_gap_width = (BAR_BLOCKS - 1) * BLOCK_GAP
-    single_block_width = (BAR_TOTAL_WIDTH - total_gap_width) / BAR_BLOCKS
     
-    # Progress ratio relative to the specific period
-    progress_ratio = days_passed / total_days
+    # Avoid division by zero
+    if total_days > 0:
+        progress_ratio = days_passed / total_days
+    else:
+        progress_ratio = 0
+
     filled_blocks = int(progress_ratio * BAR_BLOCKS)
     if days_passed > 0 and filled_blocks == 0: filled_blocks = 1
 
     bar_start_x = (IMAGE_WIDTH - BAR_TOTAL_WIDTH) / 2
     bar_start_y = text_y + 60 
+    single_block_width = (BAR_TOTAL_WIDTH - ((BAR_BLOCKS - 1) * BLOCK_GAP)) / BAR_BLOCKS
 
     for i in range(BAR_BLOCKS):
         b_x1 = bar_start_x + i * (single_block_width + BLOCK_GAP)
