@@ -38,7 +38,7 @@ THEMES = {
 # Font Path
 FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts/Roboto-Regular.ttf')
 
-# --- THE DASHBOARD (With Info Modal) ---
+# --- THE DASHBOARD (Dbrand Style) ---
 HTML_DASHBOARD = """
 <!DOCTYPE html>
 <html lang="en">
@@ -106,7 +106,7 @@ HTML_DASHBOARD = """
         .modal h3 { margin-top: 0; color: white; text-align: center; }
         .color-legend { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
         .legend-item { display: flex; align-items: center; gap: 15px; font-size: 0.95rem; color: #ccc; }
-        .dot { width: 16px; height: 16px; border-radius: 50%; display: inline-block; }
+        .dot { width: 16px; height: 16px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
         .dot.white { background: #fff; border: 1px solid #444; }
         .dot.orange { background: #ff693c; box-shadow: 0 0 8px rgba(255, 105, 60, 0.6); }
         .dot.yellow { background: #ffd700; box-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
@@ -163,26 +163,26 @@ HTML_DASHBOARD = """
 
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
         <div class="modal">
-            <h3>The Chroma Key</h3>
+            <h3>The Legend</h3>
             <div class="color-legend">
                 <div class="legend-item">
                     <span class="dot white"></span>
-                    <span><strong>The Past:</strong> Days gone.</span>
+                    <span><strong>The Past:</strong> Gone. Wasted. Irrecoverable. Stop looking at it.</span>
                 </div>
                 <div class="legend-item">
                     <span class="dot orange"></span>
-                    <span><strong>The Present:</strong> Today. Panic accordingly.</span>
+                    <span><strong>The Present:</strong> You are here. Try not to screw this one up.</span>
                 </div>
                 <div class="legend-item">
                     <span class="dot yellow"></span>
-                    <span><strong>The Special:</strong> Dates you added.</span>
+                    <span><strong>The "Special":</strong> Dates you think matter. You'll probably forget them.</span>
                 </div>
                 <div class="legend-item">
                     <span class="dot gray"></span>
-                    <span><strong>The Future:</strong> Hasn't happened yet.</span>
+                    <span><strong>The Void:</strong> The future. Try to fill it with something better than the white ones.</span>
                 </div>
             </div>
-            <button class="close-modal" onclick="toggleModal(false)">Got it</button>
+            <button class="close-modal" onclick="toggleModal(false)">Whatever</button>
         </div>
     </div>
 
