@@ -10,6 +10,8 @@ app = Flask(__name__)
 # --- Configuration & Themes ---
 IMAGE_WIDTH = 1170
 IMAGE_HEIGHT = 2532
+
+# Default (Year) Grid Settings
 GRID_COLS = 15
 GRID_ROWS = 25
 DOT_RADIUS = 18
@@ -48,6 +50,19 @@ HTML_DASHBOARD = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Grid Generator</title>
+    <meta name="description" content="Visualize your year. A minimal wallpaper generator for iOS.">
+
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://the-day-grid.vercel.app/">
+    <meta property="og:title" content="The Grid.">
+    <meta property="og:description" content="Visualize your year. Don't waste it.">
+    <meta property="og:image" content="https://the-day-grid.vercel.app/api/image?theme=dark&mode=year">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://the-day-grid.vercel.app/">
+    <meta property="twitter:title" content="The Grid.">
+    <meta property="twitter:description" content="Visualize your year. Don't waste it.">
+    <meta property="twitter:image" content="https://the-day-grid.vercel.app/api/image?theme=dark&mode=year">
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23ff693c%22/></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%231c1c1e%22/><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23ff693c%22/></svg>">
