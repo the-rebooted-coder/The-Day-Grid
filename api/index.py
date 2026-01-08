@@ -51,7 +51,7 @@ HTML_DASHBOARD = """
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%231c1c1e%22/><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23ff693c%22/></svg>">
 
     <style>
-        /* FIXED LAYOUT: 100dvh prevents scrolling and fits exactly on mobile screens */
+        /* SCROLL FIX: min-height ensures it fills screen, but allows growth. overflow: auto allows scrolling. */
         body { 
             background: #1c1c1e; 
             color: white; 
@@ -59,15 +59,15 @@ HTML_DASHBOARD = """
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            height: 100dvh; /* Dynamic Height for Mobile */
+            min-height: 100dvh; /* Allows growing beyond screen */
             margin: 0; 
-            padding: 10vh 20px 30px 20px; /* Reduced top padding */
+            padding: 10vh 20px 40px 20px; 
             box-sizing: border-box; 
-            overflow: hidden; /* Disable scrolling */
+            overflow-x: hidden; /* Prevent horizontal scroll only */
         }
 
         /* HEADER SECTION */
-        .header-section { margin-bottom: 40px; text-align: center; }
+        .header-section { margin-bottom: 30px; text-align: center; width: 100%; }
         h1 { font-weight: 900; letter-spacing: -1px; margin: 0 0 5px 0; font-size: 2.5rem; }
         .subtitle-container { display: flex; align-items: center; justify-content: center; gap: 8px; }
         p.subtitle { color: #888; text-align: center; line-height: 1.5; font-size: 0.95rem; margin: 0; }
@@ -76,8 +76,8 @@ HTML_DASHBOARD = """
         .info-btn { background: none; border: 1px solid #444; color: #888; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-family: serif; font-weight: bold; }
         .info-btn:hover { border-color: #ff693c; color: #ff693c; }
 
-        /* CONTENT WRAPPER (Centers the buttons vertically) */
-        .content-wrapper { flex-grow: 1; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 330px; }
+        /* CONTENT WRAPPER */
+        .content-wrapper { flex-grow: 1; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 330px; margin-bottom: 40px; }
 
         /* Main Button (Default) */
         button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
@@ -94,8 +94,8 @@ HTML_DASHBOARD = """
         .arrow { font-size: 0.7rem; transition: transform 0.3s; }
         .customise-trigger.active .arrow { transform: rotate(180deg); }
 
-        /* Hidden Customisation Section (Scrollable internally if needed) */
-        #custom-section { display: none; width: 100%; animation: slideDown 0.3s ease; border: 1px solid #333; border-radius: 12px; padding: 15px; margin-top: 10px; background: #232325; box-sizing: border-box; max-height: 40vh; overflow-y: auto; }
+        /* Hidden Customisation Section (Removed max-height so it pushes content down) */
+        #custom-section { display: none; width: 100%; animation: slideDown 0.3s ease; border: 1px solid #333; border-radius: 12px; padding: 15px; margin-top: 10px; background: #232325; box-sizing: border-box; }
         
         h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #666; margin: 0 0 10px 0; }
 
@@ -121,8 +121,8 @@ HTML_DASHBOARD = """
         button.generate-custom-btn { background: #333; color: white; border: 1px solid #555; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; transition: all 0.2s; }
         button.generate-custom-btn:hover { background: #ff693c; border-color: #ff693c; }
 
-        /* Result Area */
-        .result { margin-top: 20px; display: none; text-align: center; animation: slideUp 0.5s ease; width: 100%; border-top: 1px solid #333; padding-top: 20px; max-height: 40vh; overflow-y: auto; }
+        /* Result Area (Removed max-height) */
+        .result { margin-top: 20px; display: none; text-align: center; animation: slideUp 0.5s ease; width: 100%; border-top: 1px solid #333; padding-top: 20px; }
         
         .default-success { color: #ff693c; font-weight: bold; font-size: 1.1rem; margin-bottom: 20px; display: none; }
         .mock-msg { color: #ff453a; font-size: 0.85rem; margin-bottom: 20px; line-height: 1.4; display: none; border: 1px solid #ff453a; padding: 12px; border-radius: 12px; background: rgba(255, 69, 58, 0.1); text-align: left; }
@@ -137,7 +137,7 @@ HTML_DASHBOARD = """
         a.preview-link { color: #ff693c; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 10px; font-size: 0.9rem; }
         
         /* Footer Pinned to Bottom */
-        footer { margin-top: auto; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; padding-bottom: 10px; }
+        footer { margin-top: auto; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; padding-bottom: 10px; width: 100%; text-align: center; }
         .footer-link { color: #555; text-decoration: none; border-bottom: 1px dotted #555; transition: color 0.2s; }
         .footer-link:hover { color: #ff693c; border-color: #ff693c; }
 
@@ -258,7 +258,6 @@ HTML_DASHBOARD = """
     <script>
         let selectedTheme = 'dark';
 
-        // Toggle Customisation Section
         function toggleCustomise(trigger) {
             const section = document.getElementById('custom-section');
             if (section.style.display === 'block') {
@@ -270,7 +269,6 @@ HTML_DASHBOARD = """
             }
         }
 
-        // Modal Logic
         function openModal() { toggleModal(true); }
         function closeModal(e) { if(e.target === document.getElementById('modalOverlay')) toggleModal(false); }
         function toggleModal(show) {
@@ -323,9 +321,11 @@ HTML_DASHBOARD = """
                 document.getElementById('mock-msg').style.display = "none";
                 document.getElementById('custom-url-display').style.display = "none";
                 
-                // Close custom section if open
                 document.getElementById('custom-section').style.display = "none";
                 document.querySelector('.customise-trigger').classList.remove('active');
+
+                // Let the browser handle scroll naturally
+                document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
 
                 setTimeout(() => { 
                     btn.innerText = originalText; 
@@ -363,6 +363,7 @@ HTML_DASHBOARD = """
                     document.getElementById('default-success').style.display = "block";
                     document.getElementById('mock-msg').style.display = "block";
                     document.getElementById('custom-url-display').style.display = "none";
+                    document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
                 });
             } else {
                 document.getElementById('urlBox').innerText = fullUrl;
@@ -371,6 +372,7 @@ HTML_DASHBOARD = """
                 document.getElementById('default-success').style.display = "none";
                 document.getElementById('mock-msg').style.display = "none";
                 document.getElementById('custom-url-display').style.display = "block";
+                document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
             }
         }
 
