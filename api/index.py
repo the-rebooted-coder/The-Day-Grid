@@ -38,7 +38,7 @@ THEMES = {
 # Font Path
 FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts/Roboto-Regular.ttf')
 
-# --- THE DASHBOARD (Dbrand Tone + Shortcut Link) ---
+# --- THE DASHBOARD (Clean UI + Dbrand Tone) ---
 HTML_DASHBOARD = """
 <!DOCTYPE html>
 <html lang="en">
@@ -61,33 +61,39 @@ HTML_DASHBOARD = """
         .info-btn { background: none; border: 1px solid #444; color: #888; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-family: serif; font-weight: bold; }
         .info-btn:hover { border-color: #ff693c; color: #ff693c; }
 
-        /* Section Headers */
-        h2 { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: #666; margin: 20px 0 10px 0; width: 100%; max-width: 330px; text-align: left; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        /* Customisation Toggler */
+        .customise-trigger { color: #888; background: #252527; border: 1px solid #333; padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; margin-bottom: 20px; font-weight: 500; }
+        .customise-trigger:hover { background: #333; color: white; border-color: #555; }
+        .arrow { font-size: 0.7rem; transition: transform 0.3s; }
+        .customise-trigger.active .arrow { transform: rotate(180deg); }
 
-        /* Dynamic Date List */
-        #date-list { width: 100%; max-width: 330px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
-        .date-row { display: flex; gap: 10px; align-items: center; animation: fadeIn 0.3s ease; }
+        /* Hidden Customisation Section */
+        #custom-section { display: none; width: 100%; max-width: 330px; animation: slideDown 0.3s ease; border-left: 2px solid #333; padding-left: 15px; margin-bottom: 20px; }
         
-        /* Date Inputs */
+        h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #666; margin: 15px 0 10px 0; }
+
+        /* Date List */
+        #date-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        .date-row { display: flex; gap: 10px; align-items: center; }
+        
         input[type="date"] { background: #2c2c2e; border: 1px solid #444; padding: 12px; border-radius: 12px; color: white; flex-grow: 1; font-family: inherit; font-size: 16px; outline: none; transition: border 0.2s; color-scheme: dark; }
         input[type="date"]:focus { border-color: #ff693c; }
         
-        /* Buttons */
-        .btn-icon { background: #333; border: 1px solid #444; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 20px; transition: background 0.2s; flex-shrink: 0; }
+        .btn-icon { background: #333; border: 1px solid #444; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 20px; flex-shrink: 0; }
         .btn-icon:hover { background: #444; }
         .btn-remove { color: #ff453a; }
 
-        .btn-add { background: transparent; border: 1px dashed #444; color: #888; width: 100%; max-width: 330px; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 14px; margin-bottom: 10px; transition: all 0.2s; }
-        .btn-add:hover { border-color: #ff693c; color: #ff693c; background: rgba(255, 105, 60, 0.1); }
+        .btn-add { background: transparent; border: 1px dashed #444; color: #888; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 14px; margin-bottom: 10px; transition: all 0.2s; }
+        .btn-add:hover { border-color: #ff693c; color: #ff693c; }
 
         /* Theme Toggle */
-        .theme-switch { display: flex; gap: 10px; background: #2c2c2e; padding: 5px; border-radius: 12px; width: 100%; max-width: 330px; box-sizing: border-box; }
+        .theme-switch { display: flex; gap: 10px; background: #2c2c2e; padding: 5px; border-radius: 12px; width: 100%; box-sizing: border-box; }
         .theme-option { flex: 1; text-align: center; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; color: #888; transition: all 0.2s; }
         .theme-option.active { background: #444; color: white; }
         input[type="radio"] { display: none; }
 
-        /* Generate Button */
-        button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; max-width: 330px; margin-top: 30px; transition: opacity 0.2s; box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
+        /* Main Button */
+        button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; max-width: 330px; transition: opacity 0.2s; box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
         button.generate-btn:hover { opacity: 0.9; }
 
         /* Result Area */
@@ -97,16 +103,14 @@ HTML_DASHBOARD = """
         .copy-btn { background: #333; border: 1px solid #444; border-radius: 8px; cursor: pointer; color: white; padding: 0 15px; font-weight: bold; transition: background 0.2s; }
         .copy-btn:hover { background: #444; }
         
-        /* Shortcut Section */
         .shortcut-section { margin-top: 25px; background: #2c2c2e; padding: 20px; border-radius: 12px; border: 1px solid #444; }
         .shortcut-btn { background: white; color: black; display: block; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 10px; box-sizing: border-box; }
-        .shortcut-btn:hover { background: #e0e0e0; opacity: 1; }
-
+        .shortcut-btn:hover { background: #e0e0e0; }
         a.preview-link { color: #ff693c; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 10px; font-size: 0.9rem; }
         
         footer { margin-top: 60px; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; }
-        
-        /* MODAL STYLES */
+
+        /* Modal Styles */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
         .modal { background: #1c1c1e; border: 1px solid #333; padding: 25px; border-radius: 16px; width: 90%; max-width: 320px; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .modal h3 { margin-top: 0; color: white; text-align: center; }
@@ -120,7 +124,7 @@ HTML_DASHBOARD = """
         .close-modal { background: #333; border: none; color: white; width: 100%; padding: 12px; border-radius: 10px; margin-top: 25px; cursor: pointer; font-weight: 600; }
         .close-modal:hover { background: #444; }
 
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -128,40 +132,46 @@ HTML_DASHBOARD = """
     <h1>The Grid.</h1>
     
     <div class="subtitle-container">
-        <p class="subtitle">Visualize your year.<br>Add your special dates below.</p>
+        <p class="subtitle">Visualize your year.</p>
         <button class="info-btn" onclick="openModal()" title="What do the colors mean?">i</button>
     </div>
     
-    <div id="date-list">
-        <div class="date-row">
-            <input type="date" class="date-input">
-            <button class="btn-icon btn-remove" onclick="removeDate(this)" title="Remove">×</button>
-        </div>
+    <div class="customise-trigger" onclick="toggleCustomise(this)">
+        <span>Customise</span>
+        <span class="arrow">▼</span>
     </div>
-    <button class="btn-add" onclick="addDate()">+ Add another date</button>
 
-    <h2>Theme</h2>
-    <div class="theme-switch">
-        <label class="theme-option active" id="lbl-dark" onclick="setTheme('dark')">
-            Dark Mode
-            <input type="radio" name="theme" value="dark" checked>
-        </label>
-        <label class="theme-option" id="lbl-light" onclick="setTheme('light')">
-            Light Mode
-            <input type="radio" name="theme" value="light">
-        </label>
+    <div id="custom-section">
+        <h2>Dates of Importance</h2>
+        <div id="date-list">
+            <div class="date-row">
+                <input type="date" class="date-input">
+                <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
+            </div>
+        </div>
+        <button class="btn-add" onclick="addDate()">+ Add another date</button>
+
+        <h2>Theme</h2>
+        <div class="theme-switch">
+            <label class="theme-option active" id="lbl-dark" onclick="setTheme('dark')">
+                Dark
+                <input type="radio" name="theme" value="dark" checked>
+            </label>
+            <label class="theme-option" id="lbl-light" onclick="setTheme('light')">
+                Light
+                <input type="radio" name="theme" value="light">
+            </label>
+        </div>
     </div>
 
     <button class="generate-btn" onclick="generate()">Generate Link</button>
 
     <div class="result" id="result">
         <p style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Step 1: Copy this URL.</p>
-        
         <div class="url-container">
             <div class="url-box" id="urlBox"></div>
             <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
         </div>
-        
         <a class="preview-link" id="previewLink" href="#" target="_blank">Preview Wallpaper →</a>
 
         <div class="shortcut-section">
@@ -203,17 +213,26 @@ HTML_DASHBOARD = """
     <script>
         let selectedTheme = 'dark';
 
+        // Toggle Customisation Section
+        function toggleCustomise(trigger) {
+            const section = document.getElementById('custom-section');
+            if (section.style.display === 'block') {
+                section.style.display = 'none';
+                trigger.classList.remove('active');
+            } else {
+                section.style.display = 'block';
+                trigger.classList.add('active');
+            }
+        }
+
         // Modal Logic
         function openModal() { toggleModal(true); }
         function closeModal(e) { if(e.target === document.getElementById('modalOverlay')) toggleModal(false); }
-        
         function toggleModal(show) {
             const overlay = document.getElementById('modalOverlay');
             const modal = overlay.querySelector('.modal');
-            
             if (show) {
                 overlay.style.display = 'flex';
-                // Trigger reflow
                 void overlay.offsetWidth;
                 overlay.style.opacity = '1';
                 modal.style.transform = 'scale(1)';
@@ -224,26 +243,18 @@ HTML_DASHBOARD = """
             }
         }
 
-        // Add a new date input row
+        // Add/Remove Date
         function addDate() {
             const container = document.getElementById('date-list');
             const div = document.createElement('div');
             div.className = 'date-row';
-            div.innerHTML = `
-                <input type="date" class="date-input">
-                <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
-            `;
+            div.innerHTML = `<input type="date" class="date-input"><button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>`;
             container.appendChild(div);
         }
-
-        // Remove a date input row
         function removeDate(btn) {
             const container = document.getElementById('date-list');
-            if (container.children.length > 1) {
-                btn.parentElement.remove();
-            } else {
-                btn.parentElement.querySelector('input').value = '';
-            }
+            if (container.children.length > 1) btn.parentElement.remove();
+            else btn.parentElement.querySelector('input').value = '';
         }
 
         function setTheme(theme) {
@@ -255,29 +266,23 @@ HTML_DASHBOARD = """
         function generate() {
             const inputs = document.querySelectorAll('.date-input');
             let dateArray = [];
-
             inputs.forEach(input => {
                 if (input.value) {
                     const parts = input.value.split('-'); 
-                    if (parts.length === 3) {
-                        dateArray.push(`${parts[1]}-${parts[2]}`);
-                    }
+                    if (parts.length === 3) dateArray.push(`${parts[1]}-${parts[2]}`);
                 }
             });
 
             const val = dateArray.join(',');
             const baseUrl = window.location.origin + "/api/image";
-            
             const params = new URLSearchParams();
             if (val) params.append('dates', val);
             params.append('theme', selectedTheme);
             
             const fullUrl = baseUrl + "?" + params.toString();
-            
             document.getElementById('urlBox').innerText = fullUrl;
             document.getElementById('previewLink').href = fullUrl;
             document.getElementById('result').style.display = "block";
-            
             document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -288,10 +293,7 @@ HTML_DASHBOARD = """
                 const originalText = btn.innerText;
                 btn.innerText = "Copied!";
                 btn.style.background = "#ff693c";
-                setTimeout(() => {
-                    btn.innerText = originalText;
-                    btn.style.background = "#333";
-                }, 2000);
+                setTimeout(() => { btn.innerText = originalText; btn.style.background = "#333"; }, 2000);
             });
         }
     </script>
