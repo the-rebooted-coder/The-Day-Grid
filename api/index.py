@@ -39,7 +39,7 @@ THEMES = {
 # We assume structure is api/fonts/Buffalo.ttf
 FONT_DIR = os.path.join(os.path.dirname(__file__), 'fonts')
 FONT_PATH = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
-FONT_SIGNATURE_PATH = os.path.join(FONT_DIR, 'Buffalo.ttf')
+FONT_SIGNATURE_PATH = os.path.join(FONT_DIR, 'Buffalo.otf')
 
 # --- THE DASHBOARD ---
 HTML_DASHBOARD = """
