@@ -38,7 +38,7 @@ THEMES = {
 # Font Path
 FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts/Roboto-Regular.ttf')
 
-# --- THE DASHBOARD (With Favicons) ---
+# --- THE DASHBOARD (Date Picker UI) ---
 HTML_DASHBOARD = """
 <!DOCTYPE html>
 <html lang="en">
@@ -51,49 +51,66 @@ HTML_DASHBOARD = """
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%231c1c1e%22/><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23ff693c%22/></svg>">
 
     <style>
-        body { background: #1c1c1e; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        h1 { font-weight: 900; letter-spacing: -1px; margin-bottom: 10px; font-size: 2.5rem; }
-        p { color: #888; max-width: 320px; text-align: center; margin-bottom: 30px; line-height: 1.5; }
+        body { background: #1c1c1e; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 40px 20px; box-sizing: border-box; }
+        h1 { font-weight: 900; letter-spacing: -1px; margin-bottom: 5px; font-size: 2.5rem; text-align: center; }
+        p.subtitle { color: #888; max-width: 320px; text-align: center; margin-bottom: 30px; line-height: 1.5; font-size: 0.95rem; }
         
-        /* Inputs */
-        .input-group { width: 100%; max-width: 330px; margin-bottom: 20px; }
-        input[type="text"] { background: #2c2c2e; border: 1px solid #444; padding: 15px; border-radius: 12px; color: white; width: 100%; font-size: 16px; outline: none; transition: border 0.2s; box-sizing: border-box; }
-        input[type="text"]:focus { border-color: #ff693c; }
+        /* Section Headers */
+        h2 { font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; color: #666; margin: 20px 0 10px 0; width: 100%; max-width: 330px; text-align: left; border-bottom: 1px solid #333; padding-bottom: 5px; }
+
+        /* Dynamic Date List */
+        #date-list { width: 100%; max-width: 330px; display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        .date-row { display: flex; gap: 10px; align-items: center; animation: fadeIn 0.3s ease; }
         
+        /* Date Inputs */
+        input[type="date"] { background: #2c2c2e; border: 1px solid #444; padding: 12px; border-radius: 12px; color: white; flex-grow: 1; font-family: inherit; font-size: 16px; outline: none; transition: border 0.2s; color-scheme: dark; }
+        input[type="date"]:focus { border-color: #ff693c; }
+        
+        /* Buttons */
+        .btn-icon { background: #333; border: 1px solid #444; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 20px; transition: background 0.2s; flex-shrink: 0; }
+        .btn-icon:hover { background: #444; }
+        .btn-remove { color: #ff453a; }
+
+        .btn-add { background: transparent; border: 1px dashed #444; color: #888; width: 100%; max-width: 330px; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 14px; margin-bottom: 10px; transition: all 0.2s; }
+        .btn-add:hover { border-color: #ff693c; color: #ff693c; background: rgba(255, 105, 60, 0.1); }
+
         /* Theme Toggle */
-        .theme-switch { display: flex; gap: 10px; margin-bottom: 25px; background: #2c2c2e; padding: 5px; border-radius: 12px; width: 100%; max-width: 330px; box-sizing: border-box; }
+        .theme-switch { display: flex; gap: 10px; background: #2c2c2e; padding: 5px; border-radius: 12px; width: 100%; max-width: 330px; box-sizing: border-box; }
         .theme-option { flex: 1; text-align: center; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; color: #888; transition: all 0.2s; }
         .theme-option.active { background: #444; color: white; }
         input[type="radio"] { display: none; }
 
-        /* Buttons */
-        button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; max-width: 330px; transition: opacity 0.2s; }
+        /* Generate Button */
+        button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; max-width: 330px; margin-top: 30px; transition: opacity 0.2s; box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
         button.generate-btn:hover { opacity: 0.9; }
 
         /* Result Area */
-        .result { margin-top: 30px; display: none; text-align: center; animation: fadeIn 0.5s ease; width: 100%; max-width: 330px; }
-        
+        .result { margin-top: 30px; display: none; text-align: center; animation: slideUp 0.5s ease; width: 100%; max-width: 330px; border-top: 1px solid #333; padding-top: 20px; }
         .url-container { display: flex; gap: 10px; margin: 10px 0; }
         .url-box { background: #000; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #ff693c; border: 1px solid #333; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        
         .copy-btn { background: #333; border: 1px solid #444; border-radius: 8px; cursor: pointer; color: white; padding: 0 15px; font-weight: bold; transition: background 0.2s; }
         .copy-btn:hover { background: #444; }
-        
         a { color: #ff693c; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 10px; }
         
-        footer { margin-top: 60px; color: #555; font-family: 'Courier New', monospace; font-size: 14px; opacity: 0.8; }
+        footer { margin-top: 60px; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; }
         
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
     <h1>The Grid.</h1>
-    <p>Visualize your year. Enter special dates and choose your style.</p>
+    <p class="subtitle">Visualize your year.<br>Add your special dates below.</p>
     
-    <div class="input-group">
-        <input type="text" id="dates" placeholder="MM-DD, MM-DD (e.g. 03-02, 12-25)">
+    <div id="date-list">
+        <div class="date-row">
+            <input type="date" class="date-input">
+            <button class="btn-icon btn-remove" onclick="removeDate(this)" title="Remove">×</button>
+        </div>
     </div>
+    <button class="btn-add" onclick="addDate()">+ Add another date</button>
 
+    <h2>Theme</h2>
     <div class="theme-switch">
         <label class="theme-option active" id="lbl-dark" onclick="setTheme('dark')">
             Dark Mode
@@ -108,7 +125,7 @@ HTML_DASHBOARD = """
     <button class="generate-btn" onclick="generate()">Generate Link</button>
 
     <div class="result" id="result">
-        <p style="margin-bottom: 5px; font-size: 0.9rem;">Your automation URL:</p>
+        <p style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Your automation URL:</p>
         
         <div class="url-container">
             <div class="url-box" id="urlBox"></div>
@@ -123,6 +140,30 @@ HTML_DASHBOARD = """
     <script>
         let selectedTheme = 'dark';
 
+        // Add a new date input row
+        function addDate() {
+            const container = document.getElementById('date-list');
+            const div = document.createElement('div');
+            div.className = 'date-row';
+            div.innerHTML = `
+                <input type="date" class="date-input">
+                <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
+            `;
+            container.appendChild(div);
+        }
+
+        // Remove a date input row
+        function removeDate(btn) {
+            const container = document.getElementById('date-list');
+            // Don't remove the last one remaining
+            if (container.children.length > 1) {
+                btn.parentElement.remove();
+            } else {
+                // If it's the last one, just clear the value
+                btn.parentElement.querySelector('input').value = '';
+            }
+        }
+
         function setTheme(theme) {
             selectedTheme = theme;
             document.getElementById('lbl-dark').className = theme === 'dark' ? 'theme-option active' : 'theme-option';
@@ -130,7 +171,22 @@ HTML_DASHBOARD = """
         }
 
         function generate() {
-            const val = document.getElementById('dates').value;
+            const inputs = document.querySelectorAll('.date-input');
+            let dateArray = [];
+
+            inputs.forEach(input => {
+                if (input.value) {
+                    // input.value is YYYY-MM-DD
+                    // We only need MM-DD for the backend
+                    const parts = input.value.split('-'); 
+                    // parts[0] is Year, parts[1] is Month, parts[2] is Day
+                    if (parts.length === 3) {
+                        dateArray.push(`${parts[1]}-${parts[2]}`);
+                    }
+                }
+            });
+
+            const val = dateArray.join(',');
             const baseUrl = window.location.origin + "/api/image";
             
             // Build URL parameters
@@ -143,6 +199,9 @@ HTML_DASHBOARD = """
             document.getElementById('urlBox').innerText = fullUrl;
             document.getElementById('previewLink').href = fullUrl;
             document.getElementById('result').style.display = "block";
+            
+            // Scroll result into view
+            document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
         }
 
         function copyToClipboard() {
@@ -171,7 +230,7 @@ def home():
 def generate_grid():
     # 1. Get Parameters
     dates_param = request.args.get('dates', '')
-    theme_param = request.args.get('theme', 'dark') # Default to dark
+    theme_param = request.args.get('theme', 'dark')
 
     # 2. Select Theme Colors
     palette = THEMES.get(theme_param, THEMES['dark'])
