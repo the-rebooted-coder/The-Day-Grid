@@ -51,7 +51,21 @@ HTML_DASHBOARD = """
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%231c1c1e%22/><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23ff693c%22/></svg>">
 
     <style>
-        body { background: #1c1c1e; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 40px 20px; box-sizing: border-box; }
+        /* LAYOUT FIX: Changed justify-content to flex-start and added padding-top */
+        body { 
+            background: #1c1c1e; 
+            color: white; 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: flex-start; /* Align top instead of center */
+            min-height: 100vh; 
+            margin: 0; 
+            padding: 15vh 20px 40px 20px; /* 15vh top padding pushes content down slightly but keeps it high */
+            box-sizing: border-box; 
+        }
+
         h1 { font-weight: 900; letter-spacing: -1px; margin-bottom: 5px; font-size: 2.5rem; text-align: center; }
         
         .subtitle-container { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 30px; }
@@ -129,7 +143,8 @@ HTML_DASHBOARD = """
         .shortcut-btn:hover { background: #e0e0e0; }
         a.preview-link { color: #ff693c; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 10px; font-size: 0.9rem; }
         
-        footer { margin-top: 60px; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; }
+        /* Footer Pinned to Bottom */
+        footer { margin-top: auto; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; }
         .footer-link { color: #555; text-decoration: none; border-bottom: 1px dotted #555; transition: color 0.2s; }
         .footer-link:hover { color: #ff693c; border-color: #ff693c; }
 
