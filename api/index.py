@@ -8,7 +8,6 @@ import os
 app = Flask(__name__)
 
 # --- Configuration ---
-# (Same config as before)
 IMAGE_WIDTH = 1170
 IMAGE_HEIGHT = 2532
 BG_COLOR = (28, 28, 30)
@@ -21,13 +20,16 @@ GRID_ROWS = 25
 DOT_RADIUS = 18
 DOT_PADDING = 15
 
-# Path to font (Vercel puts static files in weird places, strict pathing)
-# Font is now inside the api folder, so we look in the current directory
+# Path to font
+# Font is inside the api/fonts folder
 FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts/Roboto-Regular.ttf')
 
 @app.route('/')
 def home():
-    return "The Grid API is running. Go to /api/image?dates=MM-DD to see it."
+    # --- THE FIX ---
+    # Instead of returning text, we read and serve the public/index.html file
+    html_path = os.path.join(os.path.dirname(__file__), '../public/index.html')
+    return send_file(html_path)
 
 @app.route('/api/image')
 def generate_grid():
