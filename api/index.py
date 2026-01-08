@@ -124,6 +124,8 @@ HTML_DASHBOARD = """
         a.preview-link { color: #ff693c; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 10px; font-size: 0.9rem; }
         
         footer { margin-top: 60px; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; }
+        .footer-link { color: #555; text-decoration: none; border-bottom: 1px dotted #555; transition: color 0.2s; }
+        .footer-link:hover { color: #ff693c; border-color: #ff693c; }
 
         /* Modal Styles */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
@@ -199,13 +201,13 @@ HTML_DASHBOARD = """
         <div class="shortcut-section">
             <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: #ccc;">Step 2: Install the Shortcut.</p>
             <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: #888; line-height: 1.4;">
-                Since you probably need hand-holding: Install the shortcut, paste the URL when asked, and stop wasting time. The rest is automatic.
+                Since you probably need hand-holding: Install the shortcut. <strong>Tap the three dots (...)</strong> to edit it, paste the URL where indicated, and follow the comments. Don't mess it up.
             </p>
             <a href="https://www.icloud.com/shortcuts/99a190f4001844f9ade585fc8eafd47e" class="shortcut-btn" target="_blank">Install iOS Shortcut</a>
         </div>
     </div>
 
-    <footer>&lt;/&gt; with ❤️ by Spandan.</footer>
+    <footer>&lt;/&gt; with ❤️ by <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="footer-link">Spandan</a>.</footer>
 
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
         <div class="modal">
