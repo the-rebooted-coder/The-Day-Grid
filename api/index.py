@@ -20,10 +20,10 @@ GRID_ROWS = 25
 DOT_RADIUS = 18
 DOT_PADDING = 15
 
-# Font Path (Includes fallback if font is missing)
+# Font Path
 FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts/Roboto-Regular.ttf')
 
-# --- THE DASHBOARD (Embedded directly to prevent file errors) ---
+# --- THE DASHBOARD (Now with Footer) ---
 HTML_DASHBOARD = """
 <!DOCTYPE html>
 <html lang="en">
@@ -32,16 +32,20 @@ HTML_DASHBOARD = """
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Grid Generator</title>
     <style>
-        body { background: #1c1c1e; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        body { background: #1c1c1e; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
         h1 { font-weight: 900; letter-spacing: -1px; margin-bottom: 10px; font-size: 2.5rem; }
         p { color: #888; max-width: 320px; text-align: center; margin-bottom: 30px; line-height: 1.5; }
-        input { background: #2c2c2e; border: 1px solid #444; padding: 15px; border-radius: 12px; color: white; width: 300px; font-size: 16px; margin-bottom: 20px; outline: none; transition: border 0.2s; }
+        input { background: #2c2c2e; border: 1px solid #444; padding: 15px; border-radius: 12px; color: white; width: 100%; max-width: 300px; font-size: 16px; margin-bottom: 20px; outline: none; transition: border 0.2s; box-sizing: border-box; }
         input:focus { border-color: #ff693c; }
-        button { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 330px; transition: opacity 0.2s; }
+        button { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; max-width: 330px; transition: opacity 0.2s; }
         button:hover { opacity: 0.9; }
-        .result { margin-top: 30px; display: none; text-align: center; animation: fadeIn 0.5s ease; }
-        .url-box { background: #000; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #ff693c; word-break: break-all; max-width: 300px; margin: 10px auto; border: 1px solid #333; }
+        .result { margin-top: 30px; display: none; text-align: center; animation: fadeIn 0.5s ease; width: 100%; max-width: 330px; }
+        .url-box { background: #000; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #ff693c; word-break: break-all; margin: 10px auto; border: 1px solid #333; }
         a { color: #ff693c; text-decoration: none; font-weight: 600; }
+        
+        /* Footer Styling */
+        footer { margin-top: 60px; color: #555; font-family: 'Courier New', monospace; font-size: 14px; opacity: 0.8; }
+        
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -58,6 +62,8 @@ HTML_DASHBOARD = """
         <br>
         <a id="previewLink" href="#" target="_blank">Preview Wallpaper →</a>
     </div>
+
+    <footer>&lt;/&gt; with ❤️ by Spandan.</footer>
 
     <script>
         function generate() {
@@ -76,7 +82,6 @@ HTML_DASHBOARD = """
 
 @app.route('/')
 def home():
-    # Return the HTML string directly. Indestructible.
     return HTML_DASHBOARD
 
 @app.route('/api/image')
