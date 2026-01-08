@@ -106,6 +106,13 @@ HTML_DASHBOARD = """
 
         /* Result Area */
         .result { margin-top: 30px; display: none; text-align: center; animation: slideUp 0.5s ease; width: 100%; max-width: 330px; border-top: 1px solid #333; padding-top: 20px; }
+        
+        /* The Default "Link Copied" Message */
+        .default-success { color: #ff693c; font-weight: bold; font-size: 1.1rem; margin-bottom: 20px; display: none; }
+
+        /* The Custom "URL Box" (Hidden for default) */
+        .custom-url-display { display: none; }
+
         .url-container { display: flex; gap: 10px; margin: 10px 0; }
         .url-box { background: #000; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #ff693c; border: 1px solid #333; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .copy-btn { background: #333; border: 1px solid #444; border-radius: 8px; cursor: pointer; color: white; padding: 0 15px; font-weight: bold; transition: background 0.2s; }
@@ -179,12 +186,18 @@ HTML_DASHBOARD = """
     </div>
 
     <div class="result" id="result">
-        <p id="step1-text" style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Step 1: Copy this URL.</p>
-        <div class="url-container">
-            <div class="url-box" id="urlBox"></div>
-            <button class="copy-btn" id="copyBtn" onclick="copyToClipboard()">Copy</button>
+        <div id="default-success" class="default-success">
+            ✓ Link Copied. We saved you a click.
         </div>
-        <a class="preview-link" id="previewLink" href="#" target="_blank">Preview Wallpaper →</a>
+
+        <div id="custom-url-display" class="custom-url-display">
+            <p style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Step 1: Copy this URL.</p>
+            <div class="url-container">
+                <div class="url-box" id="urlBox"></div>
+                <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
+            </div>
+            <a class="preview-link" id="previewLink" href="#" target="_blank">Preview Wallpaper →</a>
+        </div>
 
         <div class="shortcut-section">
             <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: #ccc;">Step 2: Install the Shortcut.</p>
@@ -275,33 +288,28 @@ HTML_DASHBOARD = """
             document.getElementById('lbl-light').className = theme === 'light' ? 'theme-option active' : 'theme-option';
         }
 
-        // GENERATE DEFAULT (Primary Button - Auto Copy)
+        // GENERATE DEFAULT (Primary Button - Auto Copy, No Preview)
         function generateDefault() {
             const baseUrl = window.location.origin + "/api/image";
             const fullUrl = baseUrl + "?theme=dark";
             
-            // Auto Copy Flow
             navigator.clipboard.writeText(fullUrl).then(() => {
-                showResult(fullUrl);
+                // Show Result Container
+                document.getElementById('result').style.display = "block";
                 
-                // Immediate Feedback UI
-                const copyBtn = document.getElementById('copyBtn');
-                copyBtn.innerText = "Copied!";
-                copyBtn.style.background = "#ff693c";
-                document.getElementById('step1-text').innerText = "Step 1: Link Copied. We did it for you.";
+                // Show ONLY the success message
+                document.getElementById('default-success').style.display = "block";
+                document.getElementById('custom-url-display').style.display = "none";
                 
-                // Reset text after 3s
-                setTimeout(() => { 
-                    copyBtn.innerText = "Copy"; 
-                    copyBtn.style.background = "#333";
-                }, 3000);
+                document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+
             }).catch(err => {
-                // Fallback if clipboard fails
-                showResult(fullUrl);
+                // Fallback: If clipboard fails, we MUST show the manual box
+                generateCustom();
             });
         }
 
-        // GENERATE CUSTOM (Secondary Button - Normal Flow)
+        // GENERATE CUSTOM (Secondary Button - Show Preview)
         function generateCustom() {
             const inputs = document.querySelectorAll('.date-input');
             let dateArray = [];
@@ -320,15 +328,17 @@ HTML_DASHBOARD = """
             
             const fullUrl = baseUrl + "?" + params.toString();
             
-            // Standard flow: Show link, let user copy
-            showResult(fullUrl);
-            document.getElementById('step1-text').innerText = "Step 1: Copy this URL.";
-        }
+            // Populate Fields
+            document.getElementById('urlBox').innerText = fullUrl;
+            document.getElementById('previewLink').href = fullUrl;
 
-        function showResult(url) {
-            document.getElementById('urlBox').innerText = url;
-            document.getElementById('previewLink').href = url;
+            // Show Result Container
             document.getElementById('result').style.display = "block";
+            
+            // Show ONLY the URL Box
+            document.getElementById('default-success').style.display = "none";
+            document.getElementById('custom-url-display').style.display = "block";
+            
             document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
         }
 
