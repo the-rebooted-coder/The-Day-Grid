@@ -1,86 +1,93 @@
-![Status: Operational](https://github.com/the-rebooted-coder/The-Grid/actions/workflows/generate_daily_image.yml/badge.svg)
+# The Grid.
 
-Time is linear. Your perception of it shouldn't be.
+**Time is finite. Your wallpaper was wasting it.**
 
-I built a Python script that draws circles. It runs on a server you don't own, updates while you sleep, and generates a visualisation of the only non-renewable resource you have: **Time.**
+I built a dynamic engine that visualizes the passage of time. It doesn't just "show the date." It forces you to witness the decay of the current year, quarter, month, or fortnight in real-time.
 
-It’s minimalist. It’s automated. It’s better than your calendar.
-
-## 👁️ The Witness
-
-This image updates every night at **00:00 IST**. You don't have to do anything. It just happens.
-
-![Daily Status](daily_status.png)
-
-## 🎨 The Chroma Key
-
-We used colors. You like colors.
-
-* ⚪ **White:** The Past. It's gone. Get over it.
-* 🟠 **Orange:** The Present. You are here. Panic accordingly.
-* 🟡 **Yellow:** The Special Ones. Birthdays? Anniversaries? The day you finally quit your job? We marked them.
-* ⚫ **Gray:** The Future. It hasn't happened yet. Don't worry about it.
-
-## 📲 The Integration
-
-Widgets are for amateurs. You want this as your **Wallpaper**.
-
-We made an iOS Shortcut that fetches the grid and sets it as your background automatically. It’s cleaner. It’s faster. It’s better.
-
-### Step 1: Get the Tool
-Download the shortcut. It does the heavy lifting so you don't have to.
-
-👉 **[Download the Shortcut](https://www.icloud.com/shortcuts/8963d7263edd4c3c8ca6543e52d2b260)**
-
-### Step 2: Automate It
-You have an iPhone. Make it work for you.
-
-1.  Open the **Shortcuts** app.
-2.  Go to the **Automation** tab at the bottom.
-3.  Tap **New Automation** (or the **+** icon).
-4.  Select **Time of Day**. Pick a time (e.g., **06:00 AM**). Select **Daily**.
-5.  Select **Run Immediately**. (Don't let it ask you. Just let it run.)
-6.  Tap **Next**.
-7.  Search for **The Grid** shortcut you just downloaded and select it.
-
-**Done.**
-
-Now, every morning at 6 AM, your phone wakes up, grabs the new grid, and updates your reality before you even open your eyes.
-
-## 🚀 Manual Deployment
-
-Wanna do it the hard way?
-
-1.  **Steal the URL:**
-    ```
-    [https://the-rebooted-coder.github.io/The-Grid/daily_status.png](https://the-rebooted-coder.github.io/The-Grid/daily_status.png)
-    ```
-2.  **Paste it:** Use it in any widget app, dashboard, or browser tab.
-3.  **Forget it:** We handle the updates.
-
-## 🛠️ Under the Hood
-
-It's not magic. It's `Pillow` and `GitHub Actions`.
-
-* **Engine:** Python 3.12 (The good one).
-* **Schedule:** 18:30 UTC (That's midnight in India. Do the math).
-* **Hosting:** GitHub Pages. Free real estate.
-
-## ⚙️ Customization
-
-"But I want *my* special dates."
-
-You don't need to touch the code. We made it idiot-proof.
-
-1.  **Fork** this repository.
-2.  Go to **Settings** (Tab at the top).
-3.  Go to **Secrets and variables** → **Actions** → **Variables** (Not Secrets).
-4.  Create a **New Repository Variable**:
-    * **Name:** `SPECIAL_DATES`
-    * **Value:** `03-02, 04-29, 12-10`
-    *(Format: MM-DD, separated by commas)*.
-
-The next time the clock strikes midnight, your yellow dots will appear.
+It’s minimalist. It’s automated. It’s better than whatever photo of a sunset you’re currently using.
 
 ---
-*Built with ☕ and anxiety by GitHub Actions.*
+
+## 👁️ The Upgrade
+
+We used to run this on a static script. It was fine. "Fine" is for mediocrity.
+
+We rewrote the entire architecture. **The Grid** is now a fully dynamic Python application running on Vercel. It uses `Pillow` to render pixel-perfect, mathematically centered geometry on the fly.
+
+No more waiting for midnight GitHub Actions. You want a grid? You get it now.
+
+## 🎛️ The Features
+
+We over-engineered it. You're welcome.
+
+* **Dynamic Geometry:** Whether you view a 365-day Year or a 14-day Fortnight, the dots resize and center themselves automatically.
+* **View Modes:** Year, Quarter, Month, Fortnight. Choose your preferred anxiety horizon.
+* **Theme Engine:** Dark Mode (Correct). Light Mode (Incorrect, but supported).
+* **Progress Bars:** Segmented, Solid, or Minimal. Because you care about lines.
+* **Signatures:** Add your name. Add a quote. Add your battery percentage. We used a custom script font so it looks like you signed it yourself. You didn't.
+* **Platform Gating:** **iOS & macOS Only.** If you are on Android, the site will politely tell you to leave. We care about the ecosystem. You should too.
+
+---
+
+## 📲 The Protocol
+
+This isn't a "widget." Widgets drain battery. This is a **Wallpaper Automation**.
+
+We built an iOS Shortcut that talks to our API, generates your custom grid, and sets it as your lock screen background without you lifting a finger.
+
+### Phase 1: Configuration
+
+1.  Open [The Grid](https://the-day-grid.vercel.app/) on your iPhone.
+2.  **Customize it.** Pick your mode. Pick your theme. Add the dates that actually matter to you.
+3.  Click **"Generate Custom Link."**
+4.  If you changed nothing, we *will* mock you. If you did it right, we’ll copy the URL to your clipboard.
+
+### Phase 2: The Shortcut
+
+Download the tool that does the heavy lifting.
+
+👉 **[Install the iOS Shortcut](https://www.icloud.com/shortcuts/99a190f4001844f9ade585fc8eafd47e)**
+
+* **Important:** When you install it, it will ask for a URL. **Paste the URL you copied in Phase 1.**
+* *Note:* If you messed this up, tap the three dots `(...)` on the shortcut, scroll down to the Text box, and paste your URL there. Don't break anything else.
+
+### Phase 3: Automation (Set & Forget)
+
+You have a supercomputer in your pocket. Make it work for you.
+
+1.  Open the **Shortcuts** app.
+2.  Tap the **Automation** tab at the bottom.
+3.  Tap **New Automation** (or the **+** icon).
+4.  Select **Time of Day**.
+5.  Set it to **00:01** (or whenever you wake up). Ensure **"Run Immediately"** is checked. **Do not** let it "Ask Before Running." That defeats the purpose.
+6.  Tap **Next**.
+7.  Select the **The Grid** shortcut you just installed.
+8.  Tap **Done**.
+
+**Congratulations.**
+Every morning, while you are asleep, your phone will reach out to our server, render a new visualization of your remaining time, and apply it to your screen.
+
+---
+
+## 🎨 The Legend
+
+We used colors. Try to keep up.
+
+* ⚪ **White:** The Past. Gone. Irrelevant.
+* 🟠 **Orange:** The Present. You are here. Panic accordingly.
+* 🟡 **Yellow:** Special Dates. The deadlines you're going to miss.
+* ⚫ **Gray:** The Future. The Void.
+
+---
+
+## 🛠️ Tech Stack
+
+* **Backend:** Python (Flask)
+* **Imaging:** PIL (Python Imaging Library)
+* **Font:** Roboto & Buffalo (Custom Script)
+* **Hosting:** Vercel (Serverless)
+* **Price:** Free. For now.
+
+---
+
+*&lt;/&gt; with ☕ and zero patience by [Spandan](https://github.com/the-rebooted-coder).*
