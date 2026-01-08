@@ -61,40 +61,48 @@ HTML_DASHBOARD = """
         .info-btn { background: none; border: 1px solid #444; color: #888; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-family: serif; font-weight: bold; }
         .info-btn:hover { border-color: #ff693c; color: #ff693c; }
 
+        /* Main Button (Default) */
+        button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; max-width: 330px; transition: opacity 0.2s; box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
+        button.generate-btn:hover { opacity: 0.9; }
+
+        /* Separator */
+        .separator { display: flex; align-items: center; justify-content: center; width: 100%; max-width: 330px; margin: 25px 0; color: #555; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        .separator::before, .separator::after { content: ""; flex: 1; border-bottom: 1px solid #333; margin: 0 10px; }
+
         /* Customisation Toggler */
-        .customise-trigger { color: #888; background: #252527; border: 1px solid #333; padding: 10px 20px; border-radius: 20px; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: all 0.2s; margin-bottom: 20px; font-weight: 500; }
+        .customise-trigger { color: #888; background: #252527; border: 1px solid #333; padding: 12px 20px; border-radius: 12px; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; font-weight: 500; width: 100%; max-width: 330px; box-sizing: border-box; }
         .customise-trigger:hover { background: #333; color: white; border-color: #555; }
         .arrow { font-size: 0.7rem; transition: transform 0.3s; }
         .customise-trigger.active .arrow { transform: rotate(180deg); }
 
         /* Hidden Customisation Section */
-        #custom-section { display: none; width: 100%; max-width: 330px; animation: slideDown 0.3s ease; border-left: 2px solid #333; padding-left: 15px; margin-bottom: 20px; }
+        #custom-section { display: none; width: 100%; max-width: 330px; animation: slideDown 0.3s ease; border: 1px solid #333; border-radius: 12px; padding: 20px; margin-top: 10px; background: #232325; box-sizing: border-box; }
         
-        h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; color: #666; margin: 15px 0 10px 0; }
+        h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #666; margin: 0 0 10px 0; }
 
         /* Date List */
         #date-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
         .date-row { display: flex; gap: 10px; align-items: center; }
         
-        input[type="date"] { background: #2c2c2e; border: 1px solid #444; padding: 12px; border-radius: 12px; color: white; flex-grow: 1; font-family: inherit; font-size: 16px; outline: none; transition: border 0.2s; color-scheme: dark; }
+        input[type="date"] { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; color-scheme: dark; }
         input[type="date"]:focus { border-color: #ff693c; }
         
-        .btn-icon { background: #333; border: 1px solid #444; width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 20px; flex-shrink: 0; }
+        .btn-icon { background: #333; border: 1px solid #444; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 18px; flex-shrink: 0; }
         .btn-icon:hover { background: #444; }
         .btn-remove { color: #ff453a; }
 
-        .btn-add { background: transparent; border: 1px dashed #444; color: #888; width: 100%; padding: 12px; border-radius: 12px; cursor: pointer; font-size: 14px; margin-bottom: 10px; transition: all 0.2s; }
+        .btn-add { background: transparent; border: 1px dashed #444; color: #888; width: 100%; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px; margin-bottom: 20px; transition: all 0.2s; }
         .btn-add:hover { border-color: #ff693c; color: #ff693c; }
 
         /* Theme Toggle */
-        .theme-switch { display: flex; gap: 10px; background: #2c2c2e; padding: 5px; border-radius: 12px; width: 100%; box-sizing: border-box; }
-        .theme-option { flex: 1; text-align: center; padding: 10px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 14px; color: #888; transition: all 0.2s; }
+        .theme-switch { display: flex; gap: 10px; background: #2c2c2e; padding: 4px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 20px; }
+        .theme-option { flex: 1; text-align: center; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; color: #888; transition: all 0.2s; }
         .theme-option.active { background: #444; color: white; }
         input[type="radio"] { display: none; }
-
-        /* Main Button */
-        button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; max-width: 330px; transition: opacity 0.2s; box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
-        button.generate-btn:hover { opacity: 0.9; }
+        
+        /* Secondary Button inside Custom */
+        button.generate-custom-btn { background: #333; color: white; border: 1px solid #555; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; transition: all 0.2s; }
+        button.generate-custom-btn:hover { background: #ff693c; border-color: #ff693c; }
 
         /* Result Area */
         .result { margin-top: 30px; display: none; text-align: center; animation: slideUp 0.5s ease; width: 100%; max-width: 330px; border-top: 1px solid #333; padding-top: 20px; }
@@ -136,6 +144,10 @@ HTML_DASHBOARD = """
         <button class="info-btn" onclick="openModal()" title="What do the colors mean?">i</button>
     </div>
     
+    <button class="generate-btn" onclick="generateDefault()">Get The Grid</button>
+
+    <div class="separator">OR</div>
+
     <div class="customise-trigger" onclick="toggleCustomise(this)">
         <span>Customise</span>
         <span class="arrow">▼</span>
@@ -162,9 +174,9 @@ HTML_DASHBOARD = """
                 <input type="radio" name="theme" value="light">
             </label>
         </div>
-    </div>
 
-    <button class="generate-btn" id="gen-btn" onclick="generate()">Get The Grid</button>
+        <button class="generate-custom-btn" onclick="generateCustom()">Generate Custom Link</button>
+    </div>
 
     <div class="result" id="result">
         <p style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Step 1: Copy this URL.</p>
@@ -216,16 +228,12 @@ HTML_DASHBOARD = """
         // Toggle Customisation Section
         function toggleCustomise(trigger) {
             const section = document.getElementById('custom-section');
-            const btn = document.getElementById('gen-btn');
-            
             if (section.style.display === 'block') {
                 section.style.display = 'none';
                 trigger.classList.remove('active');
-                btn.innerText = "Get The Grid";
             } else {
                 section.style.display = 'block';
                 trigger.classList.add('active');
-                btn.innerText = "Generate Link";
             }
         }
 
@@ -267,7 +275,16 @@ HTML_DASHBOARD = """
             document.getElementById('lbl-light').className = theme === 'light' ? 'theme-option active' : 'theme-option';
         }
 
-        function generate() {
+        // GENERATE DEFAULT (Primary Button)
+        function generateDefault() {
+            const baseUrl = window.location.origin + "/api/image";
+            // Default: Dark theme, no dates
+            const fullUrl = baseUrl + "?theme=dark";
+            showResult(fullUrl);
+        }
+
+        // GENERATE CUSTOM (Secondary Button)
+        function generateCustom() {
             const inputs = document.querySelectorAll('.date-input');
             let dateArray = [];
             inputs.forEach(input => {
@@ -284,8 +301,12 @@ HTML_DASHBOARD = """
             params.append('theme', selectedTheme);
             
             const fullUrl = baseUrl + "?" + params.toString();
-            document.getElementById('urlBox').innerText = fullUrl;
-            document.getElementById('previewLink').href = fullUrl;
+            showResult(fullUrl);
+        }
+
+        function showResult(url) {
+            document.getElementById('urlBox').innerText = url;
+            document.getElementById('previewLink').href = url;
             document.getElementById('result').style.display = "block";
             document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
         }
