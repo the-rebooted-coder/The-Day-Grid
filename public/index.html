@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Grid Generator</title>
+    <style>
+        body { background: #1c1c1e; color: white; font-family: sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        h1 { font-weight: 900; letter-spacing: -1px; margin-bottom: 10px; }
+        p { color: #888; max-width: 300px; text-align: center; margin-bottom: 30px; }
+        input { background: #2c2c2e; border: 1px solid #444; padding: 15px; border-radius: 12px; color: white; width: 300px; font-size: 16px; margin-bottom: 20px; }
+        button { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 330px; }
+        .result { margin-top: 30px; display: none; text-align: center; }
+        .url-box { background: #000; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #ff693c; word-break: break-all; max-width: 300px; margin: 10px auto; }
+    </style>
+</head>
+<body>
+    <h1>The Grid.</h1>
+    <p>Visualize your year. Enter your special dates (MM-DD) separated by commas.</p>
+    
+    <input type="text" id="dates" placeholder="e.g. 03-02, 12-25, 08-15">
+    <button onclick="generate()">Generate Link</button>
+
+    <div class="result" id="result">
+        <p>Copy this URL into your iOS Shortcut:</p>
+        <div class="url-box" id="urlBox"></div>
+        <br>
+        <a id="previewLink" href="#" target="_blank" style="color: #ff693c;">Preview Wallpaper</a>
+    </div>
+
+    <script>
+        function generate() {
+            const val = document.getElementById('dates').value;
+            const baseUrl = window.location.origin + "/api/image";
+            const fullUrl = baseUrl + "?dates=" + val;
+            
+            document.getElementById('urlBox').innerText = fullUrl;
+            document.getElementById('previewLink').href = fullUrl;
+            document.getElementById('result').style.display = "block";
+        }
+    </script>
+</body>
+</html>
