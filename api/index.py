@@ -22,7 +22,8 @@ DOT_RADIUS = 18
 DOT_PADDING = 15
 
 # Path to font (Vercel puts static files in weird places, strict pathing)
-FONT_PATH = os.path.join(os.path.dirname(__file__), '../public/fonts/Roboto-Regular.ttf')
+# Font is now inside the api folder, so we look in the current directory
+FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts/Roboto-Regular.ttf')
 
 @app.route('/')
 def home():
