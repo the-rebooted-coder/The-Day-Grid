@@ -36,6 +36,7 @@ THEMES = {
 }
 
 # Font Paths
+# We assume structure is api/fonts/Buffalo.ttf
 FONT_DIR = os.path.join(os.path.dirname(__file__), 'fonts')
 FONT_PATH = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
 FONT_SIGNATURE_PATH = os.path.join(FONT_DIR, 'Buffalo.ttf')
@@ -432,14 +433,13 @@ def generate_grid():
     img = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT), color=palette['BG'])
     draw = ImageDraw.Draw(img)
     
-    # Fonts
     try:
         font_small = ImageFont.truetype(FONT_PATH, 40)
     except:
         font_small = ImageFont.load_default()
 
     try:
-        font_signature = ImageFont.truetype(FONT_SIGNATURE_PATH, 50)
+        font_signature = ImageFont.truetype(FONT_SIGNATURE_PATH, 55)
     except:
         font_signature = font_small
 
@@ -495,13 +495,13 @@ def generate_grid():
         color = palette['ACTIVE'] if i < filled_blocks else palette['INACTIVE']
         draw.rounded_rectangle((b_x1, b_y1, b_x2, b_y2), radius=8, fill=color)
 
-    # --- Draw Signature (New) ---
+    # --- Draw Signature ---
     if signature_param:
         bbox_sig = draw.textbbox((0, 0), signature_param, font=font_signature)
         sig_width = bbox_sig[2] - bbox_sig[0]
         sig_x = (IMAGE_WIDTH - sig_width) / 2
-        sig_y = bar_start_y + BAR_HEIGHT + 80 # 80px Padding below bar
-        draw.text((sig_x, sig_y), signature_param, font=font_signature, fill=palette['ACTIVE'])
+        sig_y = bar_start_y + BAR_HEIGHT + 80 
+        draw.text((sig_x, sig_y), signature_param, font=font_signature, fill=palette['TEXT'])
 
     # 6. Return Image
     img_io = io.BytesIO()
