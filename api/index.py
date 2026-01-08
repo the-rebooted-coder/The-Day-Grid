@@ -56,18 +56,19 @@ HTML_DASHBOARD = """
     <meta property="og:url" content="https://the-day-grid.vercel.app/">
     <meta property="og:title" content="The Grid.">
     <meta property="og:description" content="Visualize your year. Don't waste it.">
-    <meta property="og:image" content="https://the-day-grid.vercel.app/api/image?theme=dark&mode=year">
+    <meta property="og:image" content="https://the-day-grid.vercel.app/api/image?theme=dark&mode=year&bar_style=segmented">
 
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://the-day-grid.vercel.app/">
     <meta property="twitter:title" content="The Grid.">
     <meta property="twitter:description" content="Visualize your year. Don't waste it.">
-    <meta property="twitter:image" content="https://the-day-grid.vercel.app/api/image?theme=dark&mode=year">
+    <meta property="twitter:image" content="https://the-day-grid.vercel.app/api/image?theme=dark&mode=year&bar_style=segmented">
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23ff693c%22/></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%231c1c1e%22/><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23ff693c%22/></svg>">
 
     <style>
+        /* SCROLL FIX */
         body { 
             background: #1c1c1e; 
             color: white; 
@@ -189,6 +190,15 @@ HTML_DASHBOARD = """
                     <option value="quarter">Current Quarter</option>
                     <option value="month">Current Month</option>
                     <option value="fortnight">Fortnight (14 Days)</option>
+                </select>
+            </div>
+
+            <h2>Progress Bar Style</h2>
+            <div style="margin-bottom: 20px;">
+                <select id="bar-style">
+                    <option value="segmented">Segmented (Default)</option>
+                    <option value="solid">Solid</option>
+                    <option value="minimal">Minimal</option>
                 </select>
             </div>
 
@@ -342,7 +352,7 @@ HTML_DASHBOARD = """
 
         function generateDefault() {
             const baseUrl = window.location.origin + "/api/image";
-            const fullUrl = baseUrl + "?theme=dark";
+            const fullUrl = baseUrl + "?theme=dark&mode=year&bar_style=segmented";
             const btn = document.getElementById('default-btn');
             
             navigator.clipboard.writeText(fullUrl).then(() => {
@@ -382,6 +392,7 @@ HTML_DASHBOARD = """
 
             const sig = document.getElementById('signature').value.trim();
             const mode = document.getElementById('view-mode').value;
+            const barStyle = document.getElementById('bar-style').value;
             
             const val = dateArray.join(',');
             const baseUrl = window.location.origin + "/api/image";
@@ -391,9 +402,10 @@ HTML_DASHBOARD = """
             params.append('theme', selectedTheme);
             if (sig) params.append('signature', sig);
             if (mode !== 'year') params.append('mode', mode);
+            if (barStyle !== 'segmented') params.append('bar_style', barStyle);
             
             const fullUrl = baseUrl + "?" + params.toString();
-            const isDefault = dateArray.length === 0 && selectedTheme === 'dark' && sig === '' && mode === 'year';
+            const isDefault = dateArray.length === 0 && selectedTheme === 'dark' && sig === '' && mode === 'year' && barStyle === 'segmented';
 
             if (isDefault) {
                 navigator.clipboard.writeText(fullUrl).then(() => {
@@ -440,6 +452,7 @@ def generate_grid():
     theme_param = request.args.get('theme', 'dark')
     signature_param = request.args.get('signature', '')
     mode_param = request.args.get('mode', 'year')
+    bar_style_param = request.args.get('bar_style', 'segmented')
 
     # 2. Select Theme Colors
     palette = THEMES.get(theme_param, THEMES['dark'])
@@ -593,30 +606,61 @@ def generate_grid():
     draw.text((text_x, text_y), bottom_text, font=font_small, fill=palette['ACTIVE'])
 
     # --- Draw Progress Bar ---
-    BAR_TOTAL_WIDTH = 600   
-    BAR_HEIGHT = 20         
-    BAR_BLOCKS = 10         
-    BLOCK_GAP = 12          
+    BAR_TOTAL_WIDTH = 600
     
     if total_days > 0:
         progress_ratio = days_passed / total_days
     else:
         progress_ratio = 0
 
-    filled_blocks = int(progress_ratio * BAR_BLOCKS)
-    if days_passed > 0 and filled_blocks == 0: filled_blocks = 1
-
     bar_start_x = (IMAGE_WIDTH - BAR_TOTAL_WIDTH) / 2
     bar_start_y = text_y + 60 
-    single_block_width = (BAR_TOTAL_WIDTH - ((BAR_BLOCKS - 1) * BLOCK_GAP)) / BAR_BLOCKS
 
-    for i in range(BAR_BLOCKS):
-        b_x1 = bar_start_x + i * (single_block_width + BLOCK_GAP)
-        b_y1 = bar_start_y
-        b_x2 = b_x1 + single_block_width
-        b_y2 = bar_start_y + BAR_HEIGHT
-        color = palette['ACTIVE'] if i < filled_blocks else palette['INACTIVE']
-        draw.rounded_rectangle((b_x1, b_y1, b_x2, b_y2), radius=8, fill=color)
+    if bar_style_param == 'solid':
+        BAR_HEIGHT = 20
+        # Background
+        draw.rounded_rectangle(
+            (bar_start_x, bar_start_y, bar_start_x + BAR_TOTAL_WIDTH, bar_start_y + BAR_HEIGHT),
+            radius=10, fill=palette['INACTIVE']
+        )
+        # Foreground
+        fill_width = int(BAR_TOTAL_WIDTH * progress_ratio)
+        if fill_width > 0:
+            draw.rounded_rectangle(
+                (bar_start_x, bar_start_y, bar_start_x + fill_width, bar_start_y + BAR_HEIGHT),
+                radius=10, fill=palette['ACTIVE']
+            )
+
+    elif bar_style_param == 'minimal':
+        BAR_HEIGHT = 6
+        # Background
+        draw.rounded_rectangle(
+            (bar_start_x, bar_start_y, bar_start_x + BAR_TOTAL_WIDTH, bar_start_y + BAR_HEIGHT),
+            radius=3, fill=palette['INACTIVE']
+        )
+        # Foreground
+        fill_width = int(BAR_TOTAL_WIDTH * progress_ratio)
+        if fill_width > 0:
+            draw.rounded_rectangle(
+                (bar_start_x, bar_start_y, bar_start_x + fill_width, bar_start_y + BAR_HEIGHT),
+                radius=3, fill=palette['ACTIVE']
+            )
+
+    else: # Segmented (Default)
+        BAR_HEIGHT = 20
+        BAR_BLOCKS = 10
+        BLOCK_GAP = 12
+        single_block_width = (BAR_TOTAL_WIDTH - ((BAR_BLOCKS - 1) * BLOCK_GAP)) / BAR_BLOCKS
+        filled_blocks = int(progress_ratio * BAR_BLOCKS)
+        if days_passed > 0 and filled_blocks == 0: filled_blocks = 1
+
+        for i in range(BAR_BLOCKS):
+            b_x1 = bar_start_x + i * (single_block_width + BLOCK_GAP)
+            b_y1 = bar_start_y
+            b_x2 = b_x1 + single_block_width
+            b_y2 = bar_start_y + BAR_HEIGHT
+            color = palette['ACTIVE'] if i < filled_blocks else palette['INACTIVE']
+            draw.rounded_rectangle((b_x1, b_y1, b_x2, b_y2), radius=8, fill=color)
 
     # --- Draw Signature ---
     if signature_param:
