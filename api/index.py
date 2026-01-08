@@ -10,6 +10,7 @@ app = Flask(__name__)
 # --- Configuration & Themes ---
 IMAGE_WIDTH = 1170
 IMAGE_HEIGHT = 2532
+# Defaults for Year View
 GRID_COLS = 15
 GRID_ROWS = 25
 DOT_RADIUS = 18
@@ -439,6 +440,7 @@ def generate_grid():
     grid_cols = GRID_COLS
     grid_rows = GRID_ROWS
     dot_radius = DOT_RADIUS
+    dot_spacing = DOT_PADDING
     
     # Dates logic
     if mode_param == 'month':
@@ -446,10 +448,11 @@ def generate_grid():
         last_day = calendar.monthrange(current_year, now.month)[1]
         end_date = datetime.date(current_year, now.month, last_day)
         
-        # Month View
+        # Month View - Large, well-spaced dots
         grid_cols = 7
         grid_rows = 5
-        dot_radius = 35 
+        dot_radius = 50 
+        dot_spacing = 60
         
     elif mode_param == 'quarter':
         # Calculate Quarter
@@ -461,20 +464,22 @@ def generate_grid():
         last_day_q = calendar.monthrange(current_year, end_month)[1]
         end_date = datetime.date(current_year, end_month, last_day_q)
         
-        # Quarter View
+        # Quarter View - Medium-large, spaced dots
         grid_cols = 10
         grid_rows = 10 
-        dot_radius = 25 
+        dot_radius = 40 
+        dot_spacing = 50
         
     elif mode_param == 'fortnight':
         # 14 Days starting from the most recent Monday
         start_date = now.date() - datetime.timedelta(days=now.weekday())
         end_date = start_date + datetime.timedelta(days=13)
         
-        # Fortnight View
+        # Fortnight View - Massive dots
         grid_cols = 7
         grid_rows = 2
-        dot_radius = 45 
+        dot_radius = 65 
+        dot_spacing = 80
         
     else: # Year (Default)
         start_date = datetime.date(current_year, 1, 1)
@@ -520,9 +525,8 @@ def generate_grid():
         font_signature = font_small
 
     # --- Draw Grid ---
-    DOT_SPACING = DOT_PADDING
-    total_grid_w = (grid_cols * (dot_radius * 2)) + ((grid_cols - 1) * DOT_SPACING)
-    total_grid_h = (grid_rows * (dot_radius * 2)) + ((grid_rows - 1) * DOT_SPACING)
+    total_grid_w = (grid_cols * (dot_radius * 2)) + ((grid_cols - 1) * dot_spacing)
+    total_grid_h = (grid_rows * (dot_radius * 2)) + ((grid_rows - 1) * dot_spacing)
     
     start_x = (IMAGE_WIDTH - total_grid_w) // 2
     # Vertically center grid loosely
@@ -546,8 +550,8 @@ def generate_grid():
             else:
                 color = palette['INACTIVE']
 
-            x = start_x + col * (dot_radius * 2 + DOT_SPACING)
-            y = start_y + row * (dot_radius * 2 + DOT_SPACING)
+            x = start_x + col * (dot_radius * 2 + dot_spacing)
+            y = start_y + row * (dot_radius * 2 + dot_spacing)
             draw.ellipse((x, y, x + dot_radius * 2, y + dot_radius * 2), fill=color)
             
             current_iter_date += datetime.timedelta(days=1)
