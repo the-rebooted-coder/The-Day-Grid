@@ -1,4 +1,4 @@
-from flask import Flask, send_file, request
+from flask import Flask, send_file, request, make_response
 import datetime
 import calendar
 from PIL import Image, ImageDraw, ImageFont
@@ -20,20 +20,68 @@ GRID_ROWS = 25
 DOT_RADIUS = 18
 DOT_PADDING = 15
 
-# Path to font
-# Font is inside the api/fonts folder
+# Font Path (Includes fallback if font is missing)
 FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts/Roboto-Regular.ttf')
+
+# --- THE DASHBOARD (Embedded directly to prevent file errors) ---
+HTML_DASHBOARD = """
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Grid Generator</title>
+    <style>
+        body { background: #1c1c1e; color: white; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        h1 { font-weight: 900; letter-spacing: -1px; margin-bottom: 10px; font-size: 2.5rem; }
+        p { color: #888; max-width: 320px; text-align: center; margin-bottom: 30px; line-height: 1.5; }
+        input { background: #2c2c2e; border: 1px solid #444; padding: 15px; border-radius: 12px; color: white; width: 300px; font-size: 16px; margin-bottom: 20px; outline: none; transition: border 0.2s; }
+        input:focus { border-color: #ff693c; }
+        button { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 330px; transition: opacity 0.2s; }
+        button:hover { opacity: 0.9; }
+        .result { margin-top: 30px; display: none; text-align: center; animation: fadeIn 0.5s ease; }
+        .url-box { background: #000; padding: 15px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #ff693c; word-break: break-all; max-width: 300px; margin: 10px auto; border: 1px solid #333; }
+        a { color: #ff693c; text-decoration: none; font-weight: 600; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+    <h1>The Grid.</h1>
+    <p>Visualize your year. Enter your special dates (MM-DD) separated by commas.</p>
+    
+    <input type="text" id="dates" placeholder="e.g. 03-02, 12-25">
+    <button onclick="generate()">Generate Link</button>
+
+    <div class="result" id="result">
+        <p style="margin-bottom: 10px;">Copy this URL into your Shortcut:</p>
+        <div class="url-box" id="urlBox"></div>
+        <br>
+        <a id="previewLink" href="#" target="_blank">Preview Wallpaper →</a>
+    </div>
+
+    <script>
+        function generate() {
+            const val = document.getElementById('dates').value;
+            const baseUrl = window.location.origin + "/api/image";
+            const fullUrl = baseUrl + "?dates=" + val;
+            
+            document.getElementById('urlBox').innerText = fullUrl;
+            document.getElementById('previewLink').href = fullUrl;
+            document.getElementById('result').style.display = "block";
+        }
+    </script>
+</body>
+</html>
+"""
 
 @app.route('/')
 def home():
-    # --- THE FIX ---
-    # Instead of returning text, we read and serve the public/index.html file
-    html_path = os.path.join(os.path.dirname(__file__), '../public/index.html')
-    return send_file(html_path)
+    # Return the HTML string directly. Indestructible.
+    return HTML_DASHBOARD
 
 @app.route('/api/image')
 def generate_grid():
-    # 1. Get Dates from URL Query Parameter (?dates=03-02,12-10)
+    # 1. Get Dates
     dates_param = request.args.get('dates', '')
     
     # 2. Setup Time (IST)
@@ -67,7 +115,6 @@ def generate_grid():
     try:
         font_small = ImageFont.truetype(FONT_PATH, 40)
     except:
-        # Fallback if font fails
         font_small = ImageFont.load_default()
 
     # --- Draw Grid ---
@@ -122,7 +169,7 @@ def generate_grid():
         color = DOT_COLOR_ACTIVE if i < filled_blocks else DOT_COLOR_INACTIVE
         draw.rounded_rectangle((b_x1, b_y1, b_x2, b_y2), radius=8, fill=color)
 
-    # 5. Return Image directly (no saving to disk)
+    # 5. Return Image
     img_io = io.BytesIO()
     img.save(img_io, 'PNG')
     img_io.seek(0)
