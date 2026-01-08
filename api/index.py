@@ -35,8 +35,10 @@ THEMES = {
     }
 }
 
-# Font Path
-FONT_PATH = os.path.join(os.path.dirname(__file__), 'fonts/Roboto-Regular.ttf')
+# Font Paths
+FONT_DIR = os.path.join(os.path.dirname(__file__), 'fonts')
+FONT_PATH = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
+FONT_SIGNATURE_PATH = os.path.join(FONT_DIR, 'Buffalo.ttf')
 
 # --- THE DASHBOARD ---
 HTML_DASHBOARD = """
@@ -51,7 +53,7 @@ HTML_DASHBOARD = """
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%231c1c1e%22/><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23ff693c%22/></svg>">
 
     <style>
-        /* SCROLL FIX: min-height ensures it fills screen, but allows growth. overflow: auto allows scrolling. */
+        /* SCROLL FIX */
         body { 
             background: #1c1c1e; 
             color: white; 
@@ -59,11 +61,11 @@ HTML_DASHBOARD = """
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            min-height: 100dvh; /* Allows growing beyond screen */
+            min-height: 100dvh; 
             margin: 0; 
             padding: 10vh 20px 40px 20px; 
             box-sizing: border-box; 
-            overflow-x: hidden; /* Prevent horizontal scroll only */
+            overflow-x: hidden; 
         }
 
         /* HEADER SECTION */
@@ -72,39 +74,35 @@ HTML_DASHBOARD = """
         .subtitle-container { display: flex; align-items: center; justify-content: center; gap: 8px; }
         p.subtitle { color: #888; text-align: center; line-height: 1.5; font-size: 0.95rem; margin: 0; }
         
-        /* Info Button */
         .info-btn { background: none; border: 1px solid #444; color: #888; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-family: serif; font-weight: bold; }
         .info-btn:hover { border-color: #ff693c; color: #ff693c; }
 
         /* CONTENT WRAPPER */
         .content-wrapper { flex-grow: 1; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 330px; margin-bottom: 40px; }
 
-        /* Main Button (Default) */
+        /* Buttons */
         button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
         button.generate-btn:hover { opacity: 0.9; }
         button.generate-btn.success { background: #34c759 !important; box-shadow: 0 4px 15px rgba(52, 199, 89, 0.3); transform: scale(0.98); }
 
-        /* Separator */
         .separator { display: flex; align-items: center; justify-content: center; width: 100%; margin: 25px 0; color: #555; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
         .separator::before, .separator::after { content: ""; flex: 1; border-bottom: 1px solid #333; margin: 0 10px; }
 
-        /* Customisation Toggler */
         .customise-trigger { color: #888; background: #252527; border: 1px solid #333; padding: 12px 20px; border-radius: 12px; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; font-weight: 500; width: 100%; box-sizing: border-box; }
         .customise-trigger:hover { background: #333; color: white; border-color: #555; }
         .arrow { font-size: 0.7rem; transition: transform 0.3s; }
         .customise-trigger.active .arrow { transform: rotate(180deg); }
 
-        /* Hidden Customisation Section (Removed max-height so it pushes content down) */
         #custom-section { display: none; width: 100%; animation: slideDown 0.3s ease; border: 1px solid #333; border-radius: 12px; padding: 15px; margin-top: 10px; background: #232325; box-sizing: border-box; }
         
         h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #666; margin: 0 0 10px 0; }
 
-        /* Date List */
+        /* Form Elements */
         #date-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
         .date-row { display: flex; gap: 10px; align-items: center; }
         
-        input[type="date"] { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; color-scheme: dark; }
-        input[type="date"]:focus { border-color: #ff693c; }
+        input[type="date"], input[type="text"] { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; color-scheme: dark; width: 100%; box-sizing: border-box; }
+        input[type="date"]:focus, input[type="text"]:focus { border-color: #ff693c; }
         
         .btn-icon { background: #333; border: 1px solid #444; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 18px; flex-shrink: 0; }
         .btn-icon:hover { background: #444; }
@@ -112,7 +110,6 @@ HTML_DASHBOARD = """
         .btn-add { background: transparent; border: 1px dashed #444; color: #888; width: 100%; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 13px; margin-bottom: 15px; transition: all 0.2s; }
         .btn-add:hover { border-color: #ff693c; color: #ff693c; }
 
-        /* Theme Toggle */
         .theme-switch { display: flex; gap: 10px; background: #2c2c2e; padding: 4px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 15px; }
         .theme-option { flex: 1; text-align: center; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; color: #888; transition: all 0.2s; }
         .theme-option.active { background: #444; color: white; }
@@ -121,9 +118,8 @@ HTML_DASHBOARD = """
         button.generate-custom-btn { background: #333; color: white; border: 1px solid #555; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; transition: all 0.2s; }
         button.generate-custom-btn:hover { background: #ff693c; border-color: #ff693c; }
 
-        /* Result Area (Removed max-height) */
+        /* Result Area */
         .result { margin-top: 20px; display: none; text-align: center; animation: slideUp 0.5s ease; width: 100%; border-top: 1px solid #333; padding-top: 20px; }
-        
         .default-success { color: #ff693c; font-weight: bold; font-size: 1.1rem; margin-bottom: 20px; display: none; }
         .mock-msg { color: #ff453a; font-size: 0.85rem; margin-bottom: 20px; line-height: 1.4; display: none; border: 1px solid #ff453a; padding: 12px; border-radius: 12px; background: rgba(255, 69, 58, 0.1); text-align: left; }
         .custom-url-display { display: none; }
@@ -136,12 +132,12 @@ HTML_DASHBOARD = """
         .shortcut-btn { background: white; color: black; display: block; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 10px; box-sizing: border-box; }
         a.preview-link { color: #ff693c; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 10px; font-size: 0.9rem; }
         
-        /* Footer Pinned to Bottom */
+        /* Footer */
         footer { margin-top: auto; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; padding-bottom: 10px; width: 100%; text-align: center; }
         .footer-link { color: #555; text-decoration: none; border-bottom: 1px dotted #555; transition: color 0.2s; }
         .footer-link:hover { color: #ff693c; border-color: #ff693c; }
 
-        /* Modal Styles */
+        /* Modal */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
         .modal { background: #1c1c1e; border: 1px solid #333; padding: 25px; border-radius: 16px; width: 90%; max-width: 320px; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .modal h3 { margin-top: 0; color: white; text-align: center; }
@@ -199,15 +195,17 @@ HTML_DASHBOARD = """
                 </label>
             </div>
 
+            <h2>Signature</h2>
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="signature" placeholder="Add your signature..." maxlength="20">
+            </div>
+
             <button class="generate-custom-btn" onclick="generateCustom()">Generate Custom Link</button>
         </div>
 
         <div class="result" id="result">
             <div id="default-success" class="default-success">✓ Link Copied.</div>
-            
-            <div id="mock-msg" class="mock-msg">
-                You expanded the custom menu, changed absolutely nothing, and hit generate. We copied the link anyway, but we're judging you.
-            </div>
+            <div id="mock-msg" class="mock-msg">You expanded the custom menu, changed absolutely nothing, and hit generate. We copied the link anyway, but we're judging you.</div>
 
             <div id="custom-url-display" class="custom-url-display">
                 <p style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Step 1: Copy this URL.</p>
@@ -320,11 +318,9 @@ HTML_DASHBOARD = """
                 document.getElementById('default-success').style.display = "block";
                 document.getElementById('mock-msg').style.display = "none";
                 document.getElementById('custom-url-display').style.display = "none";
-                
                 document.getElementById('custom-section').style.display = "none";
                 document.querySelector('.customise-trigger').classList.remove('active');
-
-                // Let the browser handle scroll naturally
+                
                 document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
 
                 setTimeout(() => { 
@@ -332,7 +328,6 @@ HTML_DASHBOARD = """
                     btn.classList.remove("success");
                     btn.disabled = false;
                 }, 2000);
-
             }).catch(err => {
                 generateCustom();
             });
@@ -348,14 +343,18 @@ HTML_DASHBOARD = """
                 }
             });
 
+            const sig = document.getElementById('signature').value.trim();
+            
             const val = dateArray.join(',');
             const baseUrl = window.location.origin + "/api/image";
             const params = new URLSearchParams();
+            
             if (val) params.append('dates', val);
             params.append('theme', selectedTheme);
+            if (sig) params.append('signature', sig);
             
             const fullUrl = baseUrl + "?" + params.toString();
-            const isDefault = dateArray.length === 0 && selectedTheme === 'dark';
+            const isDefault = dateArray.length === 0 && selectedTheme === 'dark' && sig === '';
 
             if (isDefault) {
                 navigator.clipboard.writeText(fullUrl).then(() => {
@@ -400,6 +399,7 @@ def generate_grid():
     # 1. Get Parameters
     dates_param = request.args.get('dates', '')
     theme_param = request.args.get('theme', 'dark')
+    signature_param = request.args.get('signature', '')
 
     # 2. Select Theme Colors
     palette = THEMES.get(theme_param, THEMES['dark'])
@@ -432,10 +432,16 @@ def generate_grid():
     img = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT), color=palette['BG'])
     draw = ImageDraw.Draw(img)
     
+    # Fonts
     try:
         font_small = ImageFont.truetype(FONT_PATH, 40)
     except:
         font_small = ImageFont.load_default()
+
+    try:
+        font_signature = ImageFont.truetype(FONT_SIGNATURE_PATH, 50)
+    except:
+        font_signature = font_small
 
     # --- Draw Grid ---
     total_grid_width = (GRID_COLS * (DOT_RADIUS * 2)) + ((GRID_COLS - 1) * DOT_PADDING)
@@ -488,6 +494,14 @@ def generate_grid():
         b_y2 = bar_start_y + BAR_HEIGHT
         color = palette['ACTIVE'] if i < filled_blocks else palette['INACTIVE']
         draw.rounded_rectangle((b_x1, b_y1, b_x2, b_y2), radius=8, fill=color)
+
+    # --- Draw Signature (New) ---
+    if signature_param:
+        bbox_sig = draw.textbbox((0, 0), signature_param, font=font_signature)
+        sig_width = bbox_sig[2] - bbox_sig[0]
+        sig_x = (IMAGE_WIDTH - sig_width) / 2
+        sig_y = bar_start_y + BAR_HEIGHT + 80 # 80px Padding below bar
+        draw.text((sig_x, sig_y), signature_param, font=font_signature, fill=palette['ACTIVE'])
 
     # 6. Return Image
     img_io = io.BytesIO()
