@@ -44,14 +44,14 @@ HTML_DASHBOARD = """
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Grid Generator</title>
     
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23ff693c%22/></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%231c1c1e%22/><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23ff693c%22/></svg>">
 
     <style>
-        /* LAYOUT FIX: Changed justify-content to flex-start and added padding-top */
+        /* FIXED LAYOUT: 100dvh prevents scrolling and fits exactly on mobile screens */
         body { 
             background: #1c1c1e; 
             color: white; 
@@ -59,46 +59,48 @@ HTML_DASHBOARD = """
             display: flex; 
             flex-direction: column; 
             align-items: center; 
-            justify-content: flex-start; /* Align top instead of center */
-            min-height: 100vh; 
+            height: 100dvh; /* Dynamic Height for Mobile */
             margin: 0; 
-            padding: 15vh 20px 40px 20px; /* 15vh top padding pushes content down slightly but keeps it high */
+            padding: 10vh 20px 30px 20px; /* Reduced top padding */
             box-sizing: border-box; 
+            overflow: hidden; /* Disable scrolling */
         }
 
-        h1 { font-weight: 900; letter-spacing: -1px; margin-bottom: 5px; font-size: 2.5rem; text-align: center; }
-        
-        .subtitle-container { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 30px; }
+        /* HEADER SECTION */
+        .header-section { margin-bottom: 40px; text-align: center; }
+        h1 { font-weight: 900; letter-spacing: -1px; margin: 0 0 5px 0; font-size: 2.5rem; }
+        .subtitle-container { display: flex; align-items: center; justify-content: center; gap: 8px; }
         p.subtitle { color: #888; text-align: center; line-height: 1.5; font-size: 0.95rem; margin: 0; }
         
         /* Info Button */
         .info-btn { background: none; border: 1px solid #444; color: #888; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-family: serif; font-weight: bold; }
         .info-btn:hover { border-color: #ff693c; color: #ff693c; }
 
+        /* CONTENT WRAPPER (Centers the buttons vertically) */
+        .content-wrapper { flex-grow: 1; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 330px; }
+
         /* Main Button (Default) */
-        button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; max-width: 330px; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
+        button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
         button.generate-btn:hover { opacity: 0.9; }
-        
-        /* Success State for Button */
         button.generate-btn.success { background: #34c759 !important; box-shadow: 0 4px 15px rgba(52, 199, 89, 0.3); transform: scale(0.98); }
 
         /* Separator */
-        .separator { display: flex; align-items: center; justify-content: center; width: 100%; max-width: 330px; margin: 25px 0; color: #555; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+        .separator { display: flex; align-items: center; justify-content: center; width: 100%; margin: 25px 0; color: #555; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
         .separator::before, .separator::after { content: ""; flex: 1; border-bottom: 1px solid #333; margin: 0 10px; }
 
         /* Customisation Toggler */
-        .customise-trigger { color: #888; background: #252527; border: 1px solid #333; padding: 12px 20px; border-radius: 12px; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; font-weight: 500; width: 100%; max-width: 330px; box-sizing: border-box; }
+        .customise-trigger { color: #888; background: #252527; border: 1px solid #333; padding: 12px 20px; border-radius: 12px; font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.2s; font-weight: 500; width: 100%; box-sizing: border-box; }
         .customise-trigger:hover { background: #333; color: white; border-color: #555; }
         .arrow { font-size: 0.7rem; transition: transform 0.3s; }
         .customise-trigger.active .arrow { transform: rotate(180deg); }
 
-        /* Hidden Customisation Section */
-        #custom-section { display: none; width: 100%; max-width: 330px; animation: slideDown 0.3s ease; border: 1px solid #333; border-radius: 12px; padding: 20px; margin-top: 10px; background: #232325; box-sizing: border-box; }
+        /* Hidden Customisation Section (Scrollable internally if needed) */
+        #custom-section { display: none; width: 100%; animation: slideDown 0.3s ease; border: 1px solid #333; border-radius: 12px; padding: 15px; margin-top: 10px; background: #232325; box-sizing: border-box; max-height: 40vh; overflow-y: auto; }
         
         h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #666; margin: 0 0 10px 0; }
 
         /* Date List */
-        #date-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
+        #date-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
         .date-row { display: flex; gap: 10px; align-items: center; }
         
         input[type="date"] { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; color-scheme: dark; }
@@ -106,45 +108,36 @@ HTML_DASHBOARD = """
         
         .btn-icon { background: #333; border: 1px solid #444; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 18px; flex-shrink: 0; }
         .btn-icon:hover { background: #444; }
-        .btn-remove { color: #ff453a; }
 
-        .btn-add { background: transparent; border: 1px dashed #444; color: #888; width: 100%; padding: 10px; border-radius: 8px; cursor: pointer; font-size: 13px; margin-bottom: 20px; transition: all 0.2s; }
+        .btn-add { background: transparent; border: 1px dashed #444; color: #888; width: 100%; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 13px; margin-bottom: 15px; transition: all 0.2s; }
         .btn-add:hover { border-color: #ff693c; color: #ff693c; }
 
         /* Theme Toggle */
-        .theme-switch { display: flex; gap: 10px; background: #2c2c2e; padding: 4px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 20px; }
+        .theme-switch { display: flex; gap: 10px; background: #2c2c2e; padding: 4px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 15px; }
         .theme-option { flex: 1; text-align: center; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; color: #888; transition: all 0.2s; }
         .theme-option.active { background: #444; color: white; }
         input[type="radio"] { display: none; }
         
-        /* Secondary Button inside Custom */
         button.generate-custom-btn { background: #333; color: white; border: 1px solid #555; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; transition: all 0.2s; }
         button.generate-custom-btn:hover { background: #ff693c; border-color: #ff693c; }
 
         /* Result Area */
-        .result { margin-top: 30px; display: none; text-align: center; animation: slideUp 0.5s ease; width: 100%; max-width: 330px; border-top: 1px solid #333; padding-top: 20px; }
+        .result { margin-top: 20px; display: none; text-align: center; animation: slideUp 0.5s ease; width: 100%; border-top: 1px solid #333; padding-top: 20px; max-height: 40vh; overflow-y: auto; }
         
-        /* The Default "Link Copied" Message */
         .default-success { color: #ff693c; font-weight: bold; font-size: 1.1rem; margin-bottom: 20px; display: none; }
-        
-        /* The Mock Message */
         .mock-msg { color: #ff453a; font-size: 0.85rem; margin-bottom: 20px; line-height: 1.4; display: none; border: 1px solid #ff453a; padding: 12px; border-radius: 12px; background: rgba(255, 69, 58, 0.1); text-align: left; }
-
-        /* The Custom "URL Box" (Hidden for default) */
         .custom-url-display { display: none; }
 
         .url-container { display: flex; gap: 10px; margin: 10px 0; }
         .url-box { background: #000; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #ff693c; border: 1px solid #333; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .copy-btn { background: #333; border: 1px solid #444; border-radius: 8px; cursor: pointer; color: white; padding: 0 15px; font-weight: bold; transition: background 0.2s; }
-        .copy-btn:hover { background: #444; }
         
-        .shortcut-section { margin-top: 25px; background: #2c2c2e; padding: 20px; border-radius: 12px; border: 1px solid #444; }
+        .shortcut-section { margin-top: 20px; background: #2c2c2e; padding: 15px; border-radius: 12px; border: 1px solid #444; }
         .shortcut-btn { background: white; color: black; display: block; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 10px; box-sizing: border-box; }
-        .shortcut-btn:hover { background: #e0e0e0; }
         a.preview-link { color: #ff693c; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 10px; font-size: 0.9rem; }
         
         /* Footer Pinned to Bottom */
-        footer { margin-top: auto; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; }
+        footer { margin-top: auto; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; padding-bottom: 10px; }
         .footer-link { color: #555; text-decoration: none; border-bottom: 1px dotted #555; transition: color 0.2s; }
         .footer-link:hover { color: #ff693c; border-color: #ff693c; }
 
@@ -160,79 +153,78 @@ HTML_DASHBOARD = """
         .dot.yellow { background: #ffd700; box-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
         .dot.gray { background: #444446; }
         .close-modal { background: #333; border: none; color: white; width: 100%; padding: 12px; border-radius: 10px; margin-top: 25px; cursor: pointer; font-weight: 600; }
-        .close-modal:hover { background: #444; }
 
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
-    <h1>The Grid.</h1>
-    
-    <div class="subtitle-container">
-        <p class="subtitle">Visualize your year.</p>
-        <button class="info-btn" onclick="openModal()" title="What do the colors mean?">i</button>
+    <div class="header-section">
+        <h1>The Grid.</h1>
+        <div class="subtitle-container">
+            <p class="subtitle">Visualize your year.</p>
+            <button class="info-btn" onclick="openModal()" title="What do the colors mean?">i</button>
+        </div>
     </div>
     
-    <button class="generate-btn" id="default-btn" onclick="generateDefault()">Get The Grid</button>
+    <div class="content-wrapper">
+        <button class="generate-btn" id="default-btn" onclick="generateDefault()">Get The Grid</button>
 
-    <div class="separator">OR</div>
+        <div class="separator">OR</div>
 
-    <div class="customise-trigger" onclick="toggleCustomise(this)">
-        <span>Customise</span>
-        <span class="arrow">▼</span>
-    </div>
+        <div class="customise-trigger" onclick="toggleCustomise(this)">
+            <span>Customise</span>
+            <span class="arrow">▼</span>
+        </div>
 
-    <div id="custom-section">
-        <h2>Dates of Importance</h2>
-        <div id="date-list">
-            <div class="date-row">
-                <input type="date" class="date-input">
-                <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
+        <div id="custom-section">
+            <h2>Dates of Importance</h2>
+            <div id="date-list">
+                <div class="date-row">
+                    <input type="date" class="date-input">
+                    <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
+                </div>
             </div>
-        </div>
-        <button class="btn-add" onclick="addDate()">+ Add another date</button>
+            <button class="btn-add" onclick="addDate()">+ Add another date</button>
 
-        <h2>Theme</h2>
-        <div class="theme-switch">
-            <label class="theme-option active" id="lbl-dark" onclick="setTheme('dark')">
-                Dark
-                <input type="radio" name="theme" value="dark" checked>
-            </label>
-            <label class="theme-option" id="lbl-light" onclick="setTheme('light')">
-                Light
-                <input type="radio" name="theme" value="light">
-            </label>
-        </div>
-
-        <button class="generate-custom-btn" onclick="generateCustom()">Generate Custom Link</button>
-    </div>
-
-    <div class="result" id="result">
-        
-        <div id="default-success" class="default-success">
-            ✓ Link Copied.
-        </div>
-        
-        <div id="mock-msg" class="mock-msg">
-            You expanded the custom menu, changed absolutely nothing, and hit generate. You could have just clicked the big button. We copied the link anyway, but we're judging you.
-        </div>
-
-        <div id="custom-url-display" class="custom-url-display">
-            <p style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Step 1: Copy this URL.</p>
-            <div class="url-container">
-                <div class="url-box" id="urlBox"></div>
-                <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
+            <h2>Theme</h2>
+            <div class="theme-switch">
+                <label class="theme-option active" id="lbl-dark" onclick="setTheme('dark')">
+                    Dark
+                    <input type="radio" name="theme" value="dark" checked>
+                </label>
+                <label class="theme-option" id="lbl-light" onclick="setTheme('light')">
+                    Light
+                    <input type="radio" name="theme" value="light">
+                </label>
             </div>
-            <a class="preview-link" id="previewLink" href="#" target="_blank">Preview Wallpaper →</a>
+
+            <button class="generate-custom-btn" onclick="generateCustom()">Generate Custom Link</button>
         </div>
 
-        <div class="shortcut-section">
-            <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: #ccc;">Step 2: Install the Shortcut.</p>
-            <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: #888; line-height: 1.4;">
-                Since you probably need hand-holding: <strong>First add the shortcut, then click on the three dots (...) to edit it.</strong> Paste the URL where indicated. Don't mess it up.
-            </p>
-            <a href="https://www.icloud.com/shortcuts/99a190f4001844f9ade585fc8eafd47e" class="shortcut-btn" target="_blank">Install iOS Shortcut</a>
+        <div class="result" id="result">
+            <div id="default-success" class="default-success">✓ Link Copied.</div>
+            
+            <div id="mock-msg" class="mock-msg">
+                You expanded the custom menu, changed absolutely nothing, and hit generate. We copied the link anyway, but we're judging you.
+            </div>
+
+            <div id="custom-url-display" class="custom-url-display">
+                <p style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Step 1: Copy this URL.</p>
+                <div class="url-container">
+                    <div class="url-box" id="urlBox"></div>
+                    <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
+                </div>
+                <a class="preview-link" id="previewLink" href="#" target="_blank">Preview Wallpaper →</a>
+            </div>
+
+            <div class="shortcut-section">
+                <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: #ccc;">Step 2: Install the Shortcut.</p>
+                <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: #888; line-height: 1.4;">
+                    Since you probably need hand-holding: <strong>First add the shortcut, then click on the three dots (...) to edit it.</strong> Paste the URL where indicated. Don't mess it up.
+                </p>
+                <a href="https://www.icloud.com/shortcuts/99a190f4001844f9ade585fc8eafd47e" class="shortcut-btn" target="_blank">Install iOS Shortcut</a>
+            </div>
         </div>
     </div>
 
@@ -296,7 +288,6 @@ HTML_DASHBOARD = """
             }
         }
 
-        // Add/Remove Date
         function addDate() {
             const container = document.getElementById('date-list');
             const div = document.createElement('div');
@@ -316,30 +307,26 @@ HTML_DASHBOARD = """
             document.getElementById('lbl-light').className = theme === 'light' ? 'theme-option active' : 'theme-option';
         }
 
-        // GENERATE DEFAULT (Primary Button - Auto Copy)
         function generateDefault() {
             const baseUrl = window.location.origin + "/api/image";
             const fullUrl = baseUrl + "?theme=dark";
             const btn = document.getElementById('default-btn');
             
             navigator.clipboard.writeText(fullUrl).then(() => {
-                // BUTTON ANIMATION
                 const originalText = btn.innerText;
                 btn.innerText = "Link Copied";
                 btn.classList.add("success");
                 btn.disabled = true;
 
-                // Show Result Container
                 document.getElementById('result').style.display = "block";
-                
-                // Show Default Success, Hide others
                 document.getElementById('default-success').style.display = "block";
                 document.getElementById('mock-msg').style.display = "none";
                 document.getElementById('custom-url-display').style.display = "none";
                 
-                document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+                // Close custom section if open
+                document.getElementById('custom-section').style.display = "none";
+                document.querySelector('.customise-trigger').classList.remove('active');
 
-                // Revert Button Gracefully
                 setTimeout(() => { 
                     btn.innerText = originalText; 
                     btn.classList.remove("success");
@@ -347,12 +334,10 @@ HTML_DASHBOARD = """
                 }, 2000);
 
             }).catch(err => {
-                // Fallback: If clipboard fails, show manual box
                 generateCustom();
             });
         }
 
-        // GENERATE CUSTOM (Secondary Button)
         function generateCustom() {
             const inputs = document.querySelectorAll('.date-input');
             let dateArray = [];
@@ -370,34 +355,22 @@ HTML_DASHBOARD = """
             params.append('theme', selectedTheme);
             
             const fullUrl = baseUrl + "?" + params.toString();
-
-            // CHECK IF USER CHANGED ANYTHING
-            // Default condition: No dates, Dark theme
             const isDefault = dateArray.length === 0 && selectedTheme === 'dark';
 
             if (isDefault) {
-                // MOCK THEM
                 navigator.clipboard.writeText(fullUrl).then(() => {
                     document.getElementById('result').style.display = "block";
-                    
-                    document.getElementById('default-success').style.display = "block"; // Show "Link Copied"
-                    document.getElementById('mock-msg').style.display = "block"; // Show INSULT
-                    document.getElementById('custom-url-display').style.display = "none"; // Hide Box
-
-                    document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+                    document.getElementById('default-success').style.display = "block";
+                    document.getElementById('mock-msg').style.display = "block";
+                    document.getElementById('custom-url-display').style.display = "none";
                 });
             } else {
-                // NORMAL CUSTOM FLOW
                 document.getElementById('urlBox').innerText = fullUrl;
                 document.getElementById('previewLink').href = fullUrl;
-
                 document.getElementById('result').style.display = "block";
-                
                 document.getElementById('default-success').style.display = "none";
                 document.getElementById('mock-msg').style.display = "none";
-                document.getElementById('custom-url-display').style.display = "block"; // Show Box
-                
-                document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+                document.getElementById('custom-url-display').style.display = "block";
             }
         }
 
