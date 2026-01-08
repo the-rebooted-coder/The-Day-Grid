@@ -10,7 +10,8 @@ app = Flask(__name__)
 # --- Configuration & Themes ---
 IMAGE_WIDTH = 1170
 IMAGE_HEIGHT = 2532
-# Defaults for Year View
+
+# Default (Year) Grid Settings
 GRID_COLS = 15
 GRID_ROWS = 25
 DOT_RADIUS = 18
@@ -448,11 +449,14 @@ def generate_grid():
         last_day = calendar.monthrange(current_year, now.month)[1]
         end_date = datetime.date(current_year, now.month, last_day)
         
-        # Month View - Large, well-spaced dots
+        # Month View (Revised Math)
+        # 7 cols x 70px diam = 490px
+        # 6 gaps x 45px = 270px
+        # Total = 760px (Fits well in 1170)
         grid_cols = 7
         grid_rows = 5
-        dot_radius = 50 
-        dot_spacing = 60
+        dot_radius = 35 
+        dot_spacing = 45
         
     elif mode_param == 'quarter':
         # Calculate Quarter
@@ -464,22 +468,28 @@ def generate_grid():
         last_day_q = calendar.monthrange(current_year, end_month)[1]
         end_date = datetime.date(current_year, end_month, last_day_q)
         
-        # Quarter View - Medium-large, spaced dots
+        # Quarter View (Revised Math)
+        # 10 cols x 50px diam = 500px
+        # 9 gaps x 25px = 225px
+        # Total = 725px (Fits well)
         grid_cols = 10
         grid_rows = 10 
-        dot_radius = 40 
-        dot_spacing = 50
+        dot_radius = 25 
+        dot_spacing = 25
         
     elif mode_param == 'fortnight':
         # 14 Days starting from the most recent Monday
         start_date = now.date() - datetime.timedelta(days=now.weekday())
         end_date = start_date + datetime.timedelta(days=13)
         
-        # Fortnight View - Massive dots
+        # Fortnight View (Revised Math)
+        # 7 cols x 90px diam = 630px
+        # 6 gaps x 50px = 300px
+        # Total = 930px (Fits comfortably)
         grid_cols = 7
         grid_rows = 2
-        dot_radius = 65 
-        dot_spacing = 80
+        dot_radius = 45 
+        dot_spacing = 50
         
     else: # Year (Default)
         start_date = datetime.date(current_year, 1, 1)
