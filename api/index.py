@@ -36,7 +36,6 @@ THEMES = {
 }
 
 # Font Paths
-# We assume structure is api/fonts/Buffalo.ttf
 FONT_DIR = os.path.join(os.path.dirname(__file__), 'fonts')
 FONT_PATH = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
 FONT_SIGNATURE_PATH = os.path.join(FONT_DIR, 'Buffalo.otf')
@@ -85,6 +84,9 @@ HTML_DASHBOARD = """
         button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
         button.generate-btn:hover { opacity: 0.9; }
         button.generate-btn.success { background: #34c759 !important; box-shadow: 0 4px 15px rgba(52, 199, 89, 0.3); transform: scale(0.98); }
+        
+        /* Disabled State */
+        button.generate-btn:disabled { background: #333 !important; color: #666 !important; box-shadow: none !important; cursor: not-allowed; opacity: 1; }
 
         .separator { display: flex; align-items: center; justify-content: center; width: 100%; margin: 25px 0; color: #555; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
         .separator::before, .separator::after { content: ""; flex: 1; border-bottom: 1px solid #333; margin: 0 10px; }
@@ -255,6 +257,27 @@ HTML_DASHBOARD = """
     </div>
 
     <script>
+        // --- PLATFORM CHECK ---
+        window.onload = function() {
+            // RegEx covers iPhone, iPad, iPod, and Macintosh (macOS)
+            const isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
+            
+            if (!isApple) {
+                // 1. Disable Main Button
+                const btn = document.getElementById('default-btn');
+                btn.innerText = "Sorry, currently available only on iOS / iPadOS";
+                btn.disabled = true;
+                
+                // 2. Hide Customisation & Separator
+                document.querySelector('.separator').style.display = 'none';
+                document.querySelector('.customise-trigger').style.display = 'none';
+                document.getElementById('custom-section').style.display = 'none';
+                
+                // 3. (Optional) Force Footer to stick for neatness
+                document.querySelector('footer').style.marginTop = 'auto';
+            }
+        };
+
         let selectedTheme = 'dark';
 
         function toggleCustomise(trigger) {
