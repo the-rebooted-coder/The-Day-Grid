@@ -229,7 +229,10 @@ HTML_DASHBOARD = """
         </div>
     </div>
 
-    <footer>&lt;/&gt; with ❤️ by <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="footer-link">Spandan</a>.</footer>
+    <footer>
+        &lt;/&gt; with ❤️ by Spandan.<br>
+        <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="footer-link" style="font-size: 11px; margin-top: 5px; display: inline-block;">Version 1.0 Prod.</a>
+    </footer>
 
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
         <div class="modal">
@@ -273,7 +276,7 @@ HTML_DASHBOARD = """
                 document.querySelector('.customise-trigger').style.display = 'none';
                 document.getElementById('custom-section').style.display = 'none';
                 
-                // 3. (Optional) Force Footer to stick for neatness
+                // 3. Force Footer to stick
                 document.querySelector('footer').style.marginTop = 'auto';
             }
         };
