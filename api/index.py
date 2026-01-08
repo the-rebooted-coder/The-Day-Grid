@@ -110,6 +110,12 @@ HTML_DASHBOARD = """
         /* Result Area */
         .result { margin-top: 30px; display: none; text-align: center; animation: slideUp 0.5s ease; width: 100%; max-width: 330px; border-top: 1px solid #333; padding-top: 20px; }
         
+        /* The Default "Link Copied" Message */
+        .default-success { color: #ff693c; font-weight: bold; font-size: 1.1rem; margin-bottom: 20px; display: none; }
+        
+        /* The Mock Message */
+        .mock-msg { color: #ff453a; font-size: 0.85rem; margin-bottom: 20px; line-height: 1.4; display: none; border: 1px solid #ff453a; padding: 12px; border-radius: 12px; background: rgba(255, 69, 58, 0.1); text-align: left; }
+
         /* The Custom "URL Box" (Hidden for default) */
         .custom-url-display { display: none; }
 
@@ -189,6 +195,14 @@ HTML_DASHBOARD = """
 
     <div class="result" id="result">
         
+        <div id="default-success" class="default-success">
+            ✓ Link Copied.
+        </div>
+        
+        <div id="mock-msg" class="mock-msg">
+            You expanded the custom menu, changed absolutely nothing, and hit generate. You could have just clicked the big button. We copied the link anyway, but we're judging you.
+        </div>
+
         <div id="custom-url-display" class="custom-url-display">
             <p style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Step 1: Copy this URL.</p>
             <div class="url-container">
@@ -300,9 +314,14 @@ HTML_DASHBOARD = """
                 btn.classList.add("success");
                 btn.disabled = true;
 
-                // Show Result Container (Step 2 Only)
+                // Show Result Container
                 document.getElementById('result').style.display = "block";
+                
+                // Show Default Success, Hide others
+                document.getElementById('default-success').style.display = "block";
+                document.getElementById('mock-msg').style.display = "none";
                 document.getElementById('custom-url-display').style.display = "none";
+                
                 document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
 
                 // Revert Button Gracefully
@@ -318,7 +337,7 @@ HTML_DASHBOARD = """
             });
         }
 
-        // GENERATE CUSTOM (Secondary Button - Show Preview)
+        // GENERATE CUSTOM (Secondary Button)
         function generateCustom() {
             const inputs = document.querySelectorAll('.date-input');
             let dateArray = [];
@@ -336,18 +355,35 @@ HTML_DASHBOARD = """
             params.append('theme', selectedTheme);
             
             const fullUrl = baseUrl + "?" + params.toString();
-            
-            // Populate Fields
-            document.getElementById('urlBox').innerText = fullUrl;
-            document.getElementById('previewLink').href = fullUrl;
 
-            // Show Result Container
-            document.getElementById('result').style.display = "block";
-            
-            // Show the URL Box
-            document.getElementById('custom-url-display').style.display = "block";
-            
-            document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+            // CHECK IF USER CHANGED ANYTHING
+            // Default condition: No dates, Dark theme
+            const isDefault = dateArray.length === 0 && selectedTheme === 'dark';
+
+            if (isDefault) {
+                // MOCK THEM
+                navigator.clipboard.writeText(fullUrl).then(() => {
+                    document.getElementById('result').style.display = "block";
+                    
+                    document.getElementById('default-success').style.display = "block"; // Show "Link Copied"
+                    document.getElementById('mock-msg').style.display = "block"; // Show INSULT
+                    document.getElementById('custom-url-display').style.display = "none"; // Hide Box
+
+                    document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+                });
+            } else {
+                // NORMAL CUSTOM FLOW
+                document.getElementById('urlBox').innerText = fullUrl;
+                document.getElementById('previewLink').href = fullUrl;
+
+                document.getElementById('result').style.display = "block";
+                
+                document.getElementById('default-success').style.display = "none";
+                document.getElementById('mock-msg').style.display = "none";
+                document.getElementById('custom-url-display').style.display = "block"; // Show Box
+                
+                document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
+            }
         }
 
         function copyToClipboard() {
