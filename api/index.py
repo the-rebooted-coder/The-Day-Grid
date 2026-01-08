@@ -144,7 +144,7 @@ HTML_DASHBOARD = """
         <button class="info-btn" onclick="openModal()" title="What do the colors mean?">i</button>
     </div>
     
-    <button class="generate-btn" onclick="generateDefault()">Get The Grid</button>
+    <button class="generate-btn" id="default-btn" onclick="generateDefault()">Get The Grid</button>
 
     <div class="separator">OR</div>
 
@@ -179,10 +179,10 @@ HTML_DASHBOARD = """
     </div>
 
     <div class="result" id="result">
-        <p style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Step 1: Copy this URL.</p>
+        <p id="step1-text" style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Step 1: Copy this URL.</p>
         <div class="url-container">
             <div class="url-box" id="urlBox"></div>
-            <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
+            <button class="copy-btn" id="copyBtn" onclick="copyToClipboard()">Copy</button>
         </div>
         <a class="preview-link" id="previewLink" href="#" target="_blank">Preview Wallpaper →</a>
 
@@ -275,15 +275,33 @@ HTML_DASHBOARD = """
             document.getElementById('lbl-light').className = theme === 'light' ? 'theme-option active' : 'theme-option';
         }
 
-        // GENERATE DEFAULT (Primary Button)
+        // GENERATE DEFAULT (Primary Button - Auto Copy)
         function generateDefault() {
             const baseUrl = window.location.origin + "/api/image";
-            // Default: Dark theme, no dates
             const fullUrl = baseUrl + "?theme=dark";
-            showResult(fullUrl);
+            
+            // Auto Copy Flow
+            navigator.clipboard.writeText(fullUrl).then(() => {
+                showResult(fullUrl);
+                
+                // Immediate Feedback UI
+                const copyBtn = document.getElementById('copyBtn');
+                copyBtn.innerText = "Copied!";
+                copyBtn.style.background = "#ff693c";
+                document.getElementById('step1-text').innerText = "Step 1: Link Copied. We did it for you.";
+                
+                // Reset text after 3s
+                setTimeout(() => { 
+                    copyBtn.innerText = "Copy"; 
+                    copyBtn.style.background = "#333";
+                }, 3000);
+            }).catch(err => {
+                // Fallback if clipboard fails
+                showResult(fullUrl);
+            });
         }
 
-        // GENERATE CUSTOM (Secondary Button)
+        // GENERATE CUSTOM (Secondary Button - Normal Flow)
         function generateCustom() {
             const inputs = document.querySelectorAll('.date-input');
             let dateArray = [];
@@ -301,7 +319,10 @@ HTML_DASHBOARD = """
             params.append('theme', selectedTheme);
             
             const fullUrl = baseUrl + "?" + params.toString();
+            
+            // Standard flow: Show link, let user copy
             showResult(fullUrl);
+            document.getElementById('step1-text').innerText = "Step 1: Copy this URL.";
         }
 
         function showResult(url) {
