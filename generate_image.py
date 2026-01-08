@@ -25,7 +25,6 @@ DOT_PADDING = 22
 
 # --- Date Calculations (FIXED FOR IST) ---
 # We force the script to look at Indian Standard Time (UTC + 5:30)
-# This ensures that when GitHub runs at 18:30 UTC, the script calculates for 00:00 IST (Next Day)
 ist_offset = datetime.timedelta(hours=5, minutes=30)
 now = datetime.datetime.now(datetime.timezone.utc) + ist_offset
 
@@ -74,7 +73,7 @@ total_grid_width = (GRID_COLS * (DOT_RADIUS * 2)) + ((GRID_COLS - 1) * DOT_PADDI
 total_grid_height = (GRID_ROWS * (DOT_RADIUS * 2)) + ((GRID_ROWS - 1) * DOT_PADDING)
 
 start_x = (IMAGE_WIDTH - total_grid_width) // 2
-start_y = (IMAGE_HEIGHT - total_grid_height) // 2 + 100
+start_y = (IMAGE_HEIGHT - total_grid_height) // 2 + 50 # Adjusted slightly higher to center the whole group
 
 dot_count = 0
 for row in range(GRID_ROWS):
@@ -99,22 +98,26 @@ for row in range(GRID_ROWS):
 
         draw.ellipse((x, y, x + DOT_RADIUS * 2, y + DOT_RADIUS * 2), fill=color)
 
-# 2. Draw Bottom Text
+# --- Positioning Logic for Bottom Info ---
+# We calculate the Y position of the last row of dots to place text relative to it
+grid_bottom_y = start_y + total_grid_height
+
+# 2. Draw Text "X days left"
 bottom_text = f"{days_left}d left"
 bbox_text = draw.textbbox((0, 0), bottom_text, font=font_small)
 text_width = bbox_text[2] - bbox_text[0]
 text_x = (IMAGE_WIDTH - text_width) / 2
-text_y = IMAGE_HEIGHT - 220 # Moved up slightly to make room for bar
+
+# Place text 80 pixels below the grid
+text_y = grid_bottom_y + 80 
 
 draw.text((text_x, text_y), bottom_text, font=font_small, fill=DOT_COLOR_ACTIVE)
 
 # 3. Draw Progress Bar (Geometrically)
-# We draw rounded rectangles manually. This is 100% reliable compared to fonts.
-
-BAR_TOTAL_WIDTH = 600   # Total width of the progress bar in pixels
-BAR_HEIGHT = 24         # Height of the blocks
-BAR_BLOCKS = 10         # Number of blocks (10 blocks = 10% each)
-BLOCK_GAP = 12          # Space between blocks
+BAR_TOTAL_WIDTH = 600   
+BAR_HEIGHT = 24         
+BAR_BLOCKS = 10         
+BLOCK_GAP = 12          
 
 # Calculate the width of a single block
 total_gap_width = (BAR_BLOCKS - 1) * BLOCK_GAP
@@ -130,7 +133,9 @@ if current_day_of_year > 0 and filled_blocks == 0:
 
 # Center the bar horizontally
 bar_start_x = (IMAGE_WIDTH - BAR_TOTAL_WIDTH) / 2
-bar_start_y = text_y + 80 # 80 pixels below the text
+
+# Place bar 60 pixels below the text
+bar_start_y = text_y + 60 
 
 for i in range(BAR_BLOCKS):
     # Calculate coordinates for this block
