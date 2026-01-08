@@ -23,7 +23,7 @@ GRID_ROWS = 25
 DOT_RADIUS = 18
 
 # --- COMPACT FIX: Reduced padding to fit between Clock and Buttons ---
-DOT_PADDING = 15  # Reduced from 22 to 15 to save vertical space
+DOT_PADDING = 15  # Reduced padding to save vertical space
 
 # --- Date Calculations (FIXED FOR IST) ---
 ist_offset = datetime.timedelta(hours=5, minutes=30)
@@ -76,8 +76,6 @@ total_grid_height = (GRID_ROWS * (DOT_RADIUS * 2)) + ((GRID_ROWS - 1) * DOT_PADD
 start_x = (IMAGE_WIDTH - total_grid_width) // 2
 
 # --- POSITIONING FIX: Centered + 60px ---
-# Since the grid is now shorter, we center it and push it down just slightly
-# to clear the clock, but it won't reach the bottom buttons.
 start_y = (IMAGE_HEIGHT - total_grid_height) // 2 + 60
 
 dot_count = 0
@@ -112,14 +110,14 @@ bbox_text = draw.textbbox((0, 0), bottom_text, font=font_small)
 text_width = bbox_text[2] - bbox_text[0]
 text_x = (IMAGE_WIDTH - text_width) / 2
 
-# Tighter spacing: 50px below grid
+# Place text 50px below grid
 text_y = grid_bottom_y + 50 
 
 draw.text((text_x, text_y), bottom_text, font=font_small, fill=DOT_COLOR_ACTIVE)
 
 # 3. Draw Progress Bar (Geometrically)
 BAR_TOTAL_WIDTH = 600   
-BAR_HEIGHT = 20         # Slightly thinner bar
+BAR_HEIGHT = 20         
 BAR_BLOCKS = 10         
 BLOCK_GAP = 12          
 
@@ -137,8 +135,8 @@ if current_day_of_year > 0 and filled_blocks == 0:
 # Center the bar horizontally
 bar_start_x = (IMAGE_WIDTH - BAR_TOTAL_WIDTH) / 2
 
-# Tighter spacing: 45px below text
-bar_start_y = text_y + 45 
+# --- PADDING FIX: Increased spacing to 60px ---
+bar_start_y = text_y + 60 
 
 for i in range(BAR_BLOCKS):
     # Calculate coordinates for this block
