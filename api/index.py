@@ -58,12 +58,6 @@ HTML_DASHBOARD = """
     <meta property="og:description" content="Visualize your year. Don't waste it.">
     <meta property="og:image" content="https://the-day-grid.vercel.app/api/image?theme=dark&mode=year&bar_style=segmented">
 
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://the-day-grid.vercel.app/">
-    <meta property="twitter:title" content="The Grid.">
-    <meta property="twitter:description" content="Visualize your year. Don't waste it.">
-    <meta property="twitter:image" content="https://the-day-grid.vercel.app/api/image?theme=dark&mode=year&bar_style=segmented">
-    
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23ff693c%22/></svg>">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%231c1c1e%22/><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23ff693c%22/></svg>">
 
@@ -117,15 +111,13 @@ HTML_DASHBOARD = """
         input[type="date"], input[type="text"], select { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; color-scheme: dark; width: 100%; box-sizing: border-box; }
         input[type="date"]:focus, input[type="text"]:focus, select:focus { border-color: #ff693c; }
         
-        /* RESTRICTED EMOJI SELECTOR */
-        .emoji-select {
+        /* SYMBOL INPUT */
+        .symbol-input {
             flex-grow: 0 !important;
-            width: 70px !important;
+            width: 60px !important;
             text-align: center;
-            font-size: 18px !important;
-            appearance: none;
-            -webkit-appearance: none;
-            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
         }
 
         .btn-icon { background: #333; border: 1px solid #444; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 18px; flex-shrink: 0; }
@@ -215,11 +207,11 @@ HTML_DASHBOARD = """
             </div>
 
             <h2>Dates of Importance</h2>
+            <p style="font-size: 0.8rem; color: #666; margin: -5px 0 10px 0;">Use letters or simple symbols (e.g. B, $, !)</p>
             <div id="date-list">
                 <div class="date-row">
                     <input type="date" class="date-input">
-                    <select class="emoji-select">
-                        <option value="">🟡</option> <option value="🍰">🍰</option> <option value="❤️">❤️</option> <option value="🚀">🚀</option> <option value="💰">💰</option> <option value="✈️">✈️</option> <option value="💀">💀</option> <option value="🍺">🍺</option> </select>
+                    <input type="text" class="symbol-input" placeholder="★" maxlength="1">
                     <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
                 </div>
             </div>
@@ -349,28 +341,14 @@ HTML_DASHBOARD = """
             const container = document.getElementById('date-list');
             const div = document.createElement('div');
             div.className = 'date-row';
-            // Duplicate the select options manually or clone
-            div.innerHTML = `
-                <input type="date" class="date-input">
-                <select class="emoji-select">
-                    <option value="">🟡</option>
-                    <option value="🍰">🍰</option>
-                    <option value="❤️">❤️</option>
-                    <option value="🚀">🚀</option>
-                    <option value="💰">💰</option>
-                    <option value="✈️">✈️</option>
-                    <option value="💀">💀</option>
-                    <option value="🍺">🍺</option>
-                </select>
-                <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
-            `;
+            div.innerHTML = `<input type="date" class="date-input"><input type="text" class="symbol-input" placeholder="★" maxlength="1"><button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>`;
             container.appendChild(div);
         }
         function removeDate(btn) {
             const container = document.getElementById('date-list');
             if (container.children.length > 1) btn.parentElement.remove();
             else {
-                const inputs = btn.parentElement.querySelectorAll('input, select');
+                const inputs = btn.parentElement.querySelectorAll('input');
                 inputs.forEach(i => i.value = '');
             }
         }
@@ -417,15 +395,14 @@ HTML_DASHBOARD = """
             
             rows.forEach(row => {
                 const dateInput = row.querySelector('.date-input');
-                const emojiSelect = row.querySelector('.emoji-select');
+                const symbolInput = row.querySelector('.symbol-input');
                 
                 if (dateInput.value) {
                     const parts = dateInput.value.split('-'); 
                     if (parts.length === 3) {
                         let entry = `${parts[1]}-${parts[2]}`;
-                        // Use dropdown value
-                        if (emojiSelect && emojiSelect.value) {
-                            entry += `|${emojiSelect.value}`;
+                        if (symbolInput && symbolInput.value.trim()) {
+                            entry += `|${symbolInput.value.trim()}`;
                         }
                         dateEntries.push(entry);
                     }
@@ -505,7 +482,7 @@ def generate_grid():
     now = datetime.datetime.now(datetime.timezone.utc) + ist_offset
     current_year = now.year
     
-    # 4. Determine Grid Dimensions & Range based on Mode
+    # 4. Determine Grid Dimensions & Range
     grid_cols = GRID_COLS
     grid_rows = GRID_ROWS
     dot_radius = DOT_RADIUS
@@ -517,7 +494,6 @@ def generate_grid():
         end_date = datetime.date(current_year, now.month, last_day)
         grid_cols, grid_rows = 7, 5
         dot_radius, dot_spacing = 35, 45
-        
     elif mode_param == 'quarter':
         q = (now.month - 1) // 3 + 1
         start_month = (q - 1) * 3 + 1
@@ -527,13 +503,11 @@ def generate_grid():
         end_date = datetime.date(current_year, end_month, last_day_q)
         grid_cols, grid_rows = 10, 10
         dot_radius, dot_spacing = 25, 25
-        
     elif mode_param == 'fortnight':
         start_date = now.date() - datetime.timedelta(days=now.weekday())
         end_date = start_date + datetime.timedelta(days=13)
         grid_cols, grid_rows = 7, 2
         dot_radius, dot_spacing = 45, 50
-        
     else: # Year
         start_date = datetime.date(current_year, 1, 1)
         end_date = datetime.date(current_year, 12, 31)
@@ -545,15 +519,17 @@ def generate_grid():
     
     days_left = total_days - days_passed
 
-    # 5. Parse Special Dates & Emojis
+    # 5. Parse Special Dates & Symbols
     special_dates = {}
     if dates_param:
         items = dates_param.split(',')
         for item in items:
             if '|' in item:
-                d_str, emoji = item.split('|', 1)
+                d_str, symbol = item.split('|', 1)
+                # Take only first char for safety
+                symbol = symbol.strip()[:1]
             else:
-                d_str, emoji = item, None
+                d_str, symbol = item, None
             
             try:
                 parts = d_str.strip().split('-')
@@ -561,7 +537,7 @@ def generate_grid():
                     m, d = int(parts[0]), int(parts[1])
                     try:
                         date_obj = datetime.date(current_year, m, d)
-                        special_dates[date_obj] = emoji
+                        special_dates[date_obj] = symbol
                     except ValueError: pass
             except ValueError: pass
 
@@ -572,11 +548,11 @@ def generate_grid():
     # Fonts
     try:
         font_small = ImageFont.truetype(FONT_PATH, 40)
-        # We try to use the standard font for emoji fallback
-        font_emoji = ImageFont.truetype(FONT_PATH, int(dot_radius * 1.5))
+        # Font for the symbol inside the dot
+        font_symbol = ImageFont.truetype(FONT_PATH, int(dot_radius * 1.3))
     except:
         font_small = ImageFont.load_default()
-        font_emoji = font_small
+        font_symbol = font_small
 
     try:
         font_signature = ImageFont.truetype(FONT_SIGNATURE_PATH, 55)
@@ -590,7 +566,6 @@ def generate_grid():
     
     start_x = (IMAGE_WIDTH - total_grid_w) // 2
     
-    # Alignment Logic
     if mode_param == 'year':
         start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2) + 150 
     else:
@@ -606,13 +581,12 @@ def generate_grid():
                 break
             
             draw_color = palette['INACTIVE']
-            draw_emoji = None
+            symbol_char = None
             
             if current_iter_date in special_dates:
-                if special_dates[current_iter_date]:
-                    draw_emoji = special_dates[current_iter_date]
-                else:
-                    draw_color = palette['SPECIAL']
+                # If symbol provided, use Gold dot + BG Color Text
+                symbol_char = special_dates[current_iter_date]
+                draw_color = palette['SPECIAL']
             elif current_iter_date == now.date():
                 draw_color = palette['ACTIVE']
             elif current_iter_date < now.date():
@@ -621,22 +595,22 @@ def generate_grid():
             x = start_x + col * (dot_radius * 2 + DOT_SPACING)
             y = start_y + row * (dot_radius * 2 + DOT_SPACING)
 
-            if draw_emoji:
-                # 1. Attempt to draw the Emoji character
-                # Even if the font doesn't have color, it might have the glyph.
-                # If it lacks the glyph, it draws a box. 
-                # We enforce the 'SPECIAL' (Gold) color so even the outline/box looks intentional.
+            # Draw the dot
+            draw.ellipse((x, y, x + dot_radius * 2, y + dot_radius * 2), fill=draw_color)
+
+            # Draw the "Cutout" Symbol if it exists
+            if symbol_char:
                 try:
-                    bbox = draw.textbbox((0, 0), draw_emoji, font=font_emoji)
-                    e_w = bbox[2] - bbox[0]
-                    e_h = bbox[3] - bbox[1]
-                    e_x = x + dot_radius - (e_w / 2)
-                    e_y = y + dot_radius - (e_h / 2) - (dot_radius * 0.2)
-                    draw.text((e_x, e_y), draw_emoji, font=font_emoji, fill=palette['SPECIAL'])
+                    bbox = draw.textbbox((0, 0), symbol_char, font=font_symbol)
+                    text_w = bbox[2] - bbox[0]
+                    text_h = bbox[3] - bbox[1]
+                    # Center text in circle
+                    text_x = x + dot_radius - (text_w / 2)
+                    text_y = y + dot_radius - (text_h / 2) - (dot_radius * 0.2)
+                    # "Cutout" effect: Draw text in background color
+                    draw.text((text_x, text_y), symbol_char, font=font_symbol, fill=palette['BG'])
                 except:
-                     draw.ellipse((x, y, x + dot_radius * 2, y + dot_radius * 2), fill=palette['SPECIAL'])
-            else:
-                draw.ellipse((x, y, x + dot_radius * 2, y + dot_radius * 2), fill=draw_color)
+                    pass
             
             current_iter_date += datetime.timedelta(days=1)
 
