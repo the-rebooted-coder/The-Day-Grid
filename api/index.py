@@ -219,7 +219,7 @@ HTML_DASHBOARD = """
                 <div class="date-row">
                     <input type="date" class="date-input">
                     <select class="emoji-select">
-                        <option value="">🟡</option> <option value="🎂">🎂</option> <option value="❤️">❤️</option> <option value="🚀">🚀</option> <option value="💰">💰</option> <option value="✈️">✈️</option> <option value="💀">💀</option> <option value="🍺">🍺</option> </select>
+                        <option value="">🟡</option> <option value="🍰">🍰</option> <option value="❤️">❤️</option> <option value="🚀">🚀</option> <option value="💰">💰</option> <option value="✈️">✈️</option> <option value="💀">💀</option> <option value="🍺">🍺</option> </select>
                     <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
                 </div>
             </div>
@@ -354,7 +354,7 @@ HTML_DASHBOARD = """
                 <input type="date" class="date-input">
                 <select class="emoji-select">
                     <option value="">🟡</option>
-                    <option value="🎂">🎂</option>
+                    <option value="🍰">🍰</option>
                     <option value="❤️">❤️</option>
                     <option value="🚀">🚀</option>
                     <option value="💰">💰</option>
