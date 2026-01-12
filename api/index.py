@@ -462,10 +462,13 @@ HTML_DASHBOARD = """
         <div class="modal">
             <h3>Version 3.1 Notes</h3>
             <ul class="release-list">
-                <li><strong>Smart Device Detection:</strong> We now auto-detect if your iPhone uses a Notch or Dynamic Island for the preview.</li>
-                <li><strong>Remember Me:</strong> Your settings, dates, and signature now auto-save locally.</li>
-                <li><strong>Weekend Highlight:</strong> New toggle to visually dim Saturdays & Sundays.</li>
-                <li><strong>Live Mockup:</strong> Real-time iPhone 15 Pro preview directly on the dashboard.</li>
+                <li><strong>Emoji Chooser:</strong> Because a colored dot wasn't "aesthetic" enough for your Instagram story.</li>
+                <li><strong>We Killed the 'Year' Input:</strong> It's an annual calendar, Einstein. Stop trying to schedule things for 2027.</li>
+                <li><strong>Live Signature:</strong> Type your name. See it appear. It's not magic, it's JavaScript. Try not to be impressed.</li>
+                <li><strong>Weekend Highlight:</strong> Visual proof that you only live for 28% of your life.</li>
+                <li><strong>Smart Device Detection:</strong> We know what iPhone you have. If you have a Notch, we judge you. If you have an Island, we judge you harder.</li>
+                <li><strong>Segregated Months:</strong> A new view for those easily overwhelmed by 365 dots. Deep breaths.</li>
+                <li><strong>Layout Fixes:</strong> Fixed the Full Year view alignment. It used to look terrible. Now it looks slightly less terrible.</li>
             </ul>
             <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="github-btn">View Source on GitHub</a>
             <button class="close-modal" onclick="toggleReleaseModal(false)">Close</button>
