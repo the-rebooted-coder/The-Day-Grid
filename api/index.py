@@ -145,7 +145,22 @@ HTML_DASHBOARD = """
         .month-select { flex: 2; }
         .day-select { flex: 1; }
 
-        .emoji-select { flex-grow: 0 !important; width: 60px !important; text-align: center; font-size: 18px !important; appearance: none; -webkit-appearance: none; cursor: pointer; padding: 10px 0; }
+        /* --- THE FIX: text-align-last ensures iOS centers the text --- */
+        .emoji-select { 
+            flex-grow: 0 !important; 
+            width: 60px !important; 
+            
+            font-size: 18px !important; 
+            appearance: none; 
+            -webkit-appearance: none; 
+            cursor: pointer; 
+            padding: 10px 0; 
+            
+            /* Center Alignment Logic */
+            text-align: center;
+            text-align-last: center; 
+            -moz-text-align-last: center;
+        }
 
         input[type="text"] { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; width: 100%; box-sizing: border-box; }
         
