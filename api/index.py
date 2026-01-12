@@ -10,16 +10,15 @@ import json
 app = Flask(__name__)
 
 # --- Configuration & Themes ---
-IMAGE_WIDTH = 1170
-IMAGE_HEIGHT = 2532
+# Mobile Dimensions
+MOBILE_WIDTH = 1170
+MOBILE_HEIGHT = 2532
 
-# Default (Year) Grid Settings
-GRID_COLS = 15
-GRID_ROWS = 25
-DOT_RADIUS = 18
-DOT_PADDING = 15
+# Desktop Dimensions
+DESKTOP_WIDTH = 1920
+DESKTOP_HEIGHT = 1080
 
-# Define Color Palettes
+# Default Color Palettes
 THEMES = {
     'dark': {
         'BG': (28, 28, 30),
@@ -50,14 +49,11 @@ FONT_SIGNATURE_PATH = os.path.join(FONT_DIR, 'Buffalo.otf')
 emoji_cache = {}
 
 def get_emoji_image(emoji_char):
-    """Downloads the PNG representation of an emoji from Twemoji CDN."""
     if emoji_char in emoji_cache:
         return emoji_cache[emoji_char]
     
     try:
-        # Get hex codepoint (e.g. 🍰 -> 1f382)
         codepoint = "-".join([f"{ord(c):x}" for c in emoji_char if ord(c) != 0xfe0f])
-        
         url = f"https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/{codepoint}.png"
         req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
         
@@ -78,25 +74,10 @@ HTML_DASHBOARD = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Grid Generator</title>
-    <meta name="description" content="Visualize your year. A minimal wallpaper generator for iOS.">
-
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://the-day-grid.vercel.app/">
-    <meta property="og:title" content="The Grid.">
-    <meta property="og:description" content="Visualize your year. Don't waste it.">
-    <meta property="og:image" content="https://the-day-grid.vercel.app/api/image?theme=dark&mode=year&bar_style=segmented">
-
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><circle cx=%2250%22 cy=%2250%22 r=%2250%22 fill=%22%23ff693c%22/></svg>">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%231c1c1e%22/><circle cx=%2250%22 cy=%2250%22 r=%2240%22 fill=%22%23ff693c%22/></svg>">
-
-    <script defer src="/_vercel/insights/script.js"></script>
+    <meta name="description" content="Visualize your year. Wallpaper generator for iOS, Mac & Windows.">
 
     <style>
-        /* Load Custom Font for Live Preview */
-        @font-face {
-            font-family: 'SignatureFont';
-            src: url('/fonts/Buffalo.otf');
-        }
+        @font-face { font-family: 'SignatureFont'; src: url('/fonts/Buffalo.otf'); }
 
         body { 
             background: #1c1c1e; 
@@ -107,7 +88,7 @@ HTML_DASHBOARD = """
             align-items: center; 
             min-height: 100dvh; 
             margin: 0; 
-            padding: 10vh 20px 40px 20px; 
+            padding: 5vh 20px 40px 20px; 
             box-sizing: border-box; 
             overflow-x: hidden; 
         }
@@ -115,50 +96,24 @@ HTML_DASHBOARD = """
         .header-section { margin-bottom: 30px; text-align: center; width: 100%; }
         h1 { font-weight: 900; letter-spacing: -1px; margin: 0 0 5px 0; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
         
-        /* Title Animation CSS */
         #animated-title {
             transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.2s ease-in-out;
-            opacity: 1;
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            vertical-align: middle;
-            overflow: hidden;
-            white-space: nowrap;
-            height: 40px;
-            cursor: pointer;
+            opacity: 1; display: inline-flex; justify-content: center; align-items: center; 
+            vertical-align: middle; overflow: hidden; white-space: nowrap; height: 40px; cursor: pointer;
         }
         
-        #ruler {
-            visibility: hidden;
-            position: absolute;
-            white-space: nowrap;
-            font-weight: 900;
-            font-size: 2.5rem; 
-            letter-spacing: -1px;
-            pointer-events: none;
-        }
-
-        .title-dot {
-            width: 28px; 
-            height: 28px;
-            border-radius: 50%;
-            display: inline-block;
-            flex-shrink: 0;
-        }
-        
+        #ruler { visibility: hidden; position: absolute; white-space: nowrap; font-weight: 900; font-size: 2.5rem; letter-spacing: -1px; pointer-events: none; }
+        .title-dot { width: 28px; height: 28px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
         .subtitle-container { display: flex; align-items: center; justify-content: center; gap: 8px; }
         p.subtitle { color: #888; text-align: center; line-height: 1.5; font-size: 0.95rem; margin: 0; }
-        
         .info-btn { background: none; border: 1px solid #444; color: #888; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-family: serif; font-weight: bold; }
         .info-btn:hover { border-color: #ff693c; color: #ff693c; }
 
-        .content-wrapper { flex-grow: 1; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 330px; margin-bottom: 40px; }
+        .content-wrapper { flex-grow: 1; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 360px; margin-bottom: 40px; }
 
-        button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
+        button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; transition: all 0.3s; box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
         button.generate-btn:hover { opacity: 0.9; }
         button.generate-btn.success { background: #34c759 !important; box-shadow: 0 4px 15px rgba(52, 199, 89, 0.3); transform: scale(0.98); }
-        button.generate-btn:disabled { background: #333 !important; color: #666 !important; box-shadow: none !important; cursor: not-allowed; opacity: 1; }
 
         .separator { display: flex; align-items: center; justify-content: center; width: 100%; margin: 25px 0; color: #555; font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
         .separator::before, .separator::after { content: ""; flex: 1; border-bottom: 1px solid #333; margin: 0 10px; }
@@ -169,170 +124,77 @@ HTML_DASHBOARD = """
         .customise-trigger.active .arrow { transform: rotate(180deg); }
 
         #custom-section { display: none; width: 100%; animation: slideDown 0.3s ease; border: 1px solid #333; border-radius: 12px; padding: 15px; margin-top: 10px; background: #232325; box-sizing: border-box; }
-        
         h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #666; margin: 0 0 10px 0; }
 
+        /* Form Elements */
         #date-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
         .date-row { display: flex; gap: 8px; align-items: center; }
-        
         .date-picker-group { display: flex; flex-grow: 1; gap: 5px; }
-        select { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; color-scheme: dark; box-sizing: border-box; }
-        select:focus, input[type="text"]:focus { border-color: #ff693c; }
+        select, input[type="text"] { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; font-family: inherit; font-size: 14px; outline: none; width: 100%; box-sizing: border-box; }
         .month-select { flex: 2; }
         .day-select { flex: 1; }
-
-        .emoji-select { 
-            flex-grow: 0 !important; 
-            width: 60px !important; 
-            font-size: 18px !important; 
-            appearance: none; 
-            -webkit-appearance: none; 
-            cursor: pointer; 
-            padding: 10px 0; 
-            text-align: center;
-            text-align-last: center; 
-            -moz-text-align-last: center;
-        }
-
-        input[type="text"] { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; width: 100%; box-sizing: border-box; }
+        .emoji-select { flex-grow: 0 !important; width: 60px !important; font-size: 18px !important; appearance: none; -webkit-appearance: none; text-align: center; text-align-last: center; }
         
-        #signature {
-            font-family: 'SignatureFont', cursive;
-            font-size: 28px;
-            padding: 12px 10px;
-            letter-spacing: 1px;
-        }
-        #signature::placeholder {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            font-size: 14px;
-            letter-spacing: normal;
-            opacity: 0.5;
-            padding-top: 5px;
-        }
+        #signature { font-family: 'SignatureFont', cursive; font-size: 28px; letter-spacing: 1px; padding: 12px 10px; }
+        #signature::placeholder { font-family: sans-serif; font-size: 14px; letter-spacing: normal; opacity: 0.5; }
 
-        /* Toggle Switch CSS */
+        /* Toggles & Buttons */
         .toggle-container { display: flex; align-items: center; justify-content: space-between; background: #2c2c2e; padding: 12px; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px; }
-        .toggle-label { font-size: 14px; font-weight: 500; }
         .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; -webkit-transition: .4s; transition: .4s; border-radius: 24px; }
-        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background-color: white; -webkit-transition: .4s; transition: .4s; border-radius: 50%; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
         input:checked + .slider { background-color: #ff693c; }
         input:checked + .slider:before { transform: translateX(20px); }
 
         .btn-icon { background: #333; border: 1px solid #444; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 18px; flex-shrink: 0; }
-        .btn-icon:hover { background: #444; }
-
-        .btn-add { background: transparent; border: 1px dashed #444; color: #888; width: 100%; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 13px; margin-bottom: 15px; transition: all 0.2s; }
+        .btn-add { background: transparent; border: 1px dashed #444; color: #888; width: 100%; padding: 8px; border-radius: 8px; cursor: pointer; font-size: 13px; margin-bottom: 15px; }
         .btn-add:hover { border-color: #ff693c; color: #ff693c; }
 
         .theme-switch { display: flex; gap: 10px; background: #2c2c2e; padding: 4px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 15px; }
         .theme-option { flex: 1; text-align: center; padding: 8px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; color: #888; transition: all 0.2s; }
         .theme-option.active { background: #444; color: white; }
-        input[type="radio"] { display: none; }
-        
-        button.generate-custom-btn { background: #333; color: white; border: 1px solid #555; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; transition: all 0.2s; }
+
+        button.generate-custom-btn { background: #333; color: white; border: 1px solid #555; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; width: 100%; }
         button.generate-custom-btn:hover { background: #ff693c; border-color: #ff693c; }
 
+        /* Results Area */
         .result { margin-top: 20px; display: none; text-align: center; animation: slideUp 0.5s ease; width: 100%; border-top: 1px solid #333; padding-top: 20px; }
-        .default-success { color: #ff693c; font-weight: bold; font-size: 1.1rem; margin-bottom: 20px; display: none; }
-        .mock-msg { color: #ff453a; font-size: 0.85rem; margin-bottom: 20px; line-height: 1.4; display: none; border: 1px solid #ff453a; padding: 12px; border-radius: 12px; background: rgba(255, 69, 58, 0.1); text-align: left; }
-        .custom-url-display { display: none; }
-
         .url-container { display: flex; gap: 10px; margin: 10px 0; }
         .url-box { background: #000; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #ff693c; border: 1px solid #333; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .copy-btn { background: #333; border: 1px solid #444; border-radius: 8px; cursor: pointer; color: white; padding: 0 15px; font-weight: bold; transition: background 0.2s; }
-        
-        /* IPHONE MOCKUP CSS */
-        .iphone-mockup {
-            width: 280px;
-            aspect-ratio: 9 / 19.5;
-            background: #000;
-            border-radius: 40px;
-            border: 8px solid #2b2b2b;
-            position: relative;
-            margin: 20px auto;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-            transition: all 0.3s ease;
-        }
-        
-        /* DYNAMIC ISLAND STYLE (Default) */
-        .iphone-mockup.dynamic-island .dynamic-island {
-            width: 80px;
-            height: 24px;
-            background: #000;
-            position: absolute;
-            top: 12px;
-            left: 50%;
-            transform: translateX(-50%);
-            border-radius: 20px;
-            z-index: 10;
-        }
+        .copy-btn { background: #333; border: 1px solid #444; border-radius: 8px; cursor: pointer; color: white; padding: 0 15px; font-weight: bold; }
 
-        /* NOTCH STYLE */
-        .iphone-mockup.notch .dynamic-island {
-            width: 140px;
-            height: 28px;
-            background: #000;
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            border-bottom-left-radius: 16px;
-            border-bottom-right-radius: 16px;
-            border-radius: 0 0 16px 16px; /* explicit standard */
-            z-index: 10;
-        }
-
-        .mockup-img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-        }
+        /* MOCKUPS */
+        .iphone-mockup { width: 280px; aspect-ratio: 9 / 19.5; background: #000; border-radius: 40px; border: 8px solid #2b2b2b; position: relative; margin: 20px auto; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.6); }
+        .iphone-mockup.dynamic-island .dynamic-island { width: 80px; height: 24px; background: #000; position: absolute; top: 12px; left: 50%; transform: translateX(-50%); border-radius: 20px; z-index: 10; }
+        
+        .monitor-mockup { width: 320px; aspect-ratio: 16 / 9; background: #000; border: 10px solid #2b2b2b; border-bottom-width: 15px; position: relative; margin: 20px auto; overflow: hidden; box-shadow: 0 20px 40px rgba(0,0,0,0.6); border-radius: 8px; display: none;}
+        .monitor-stand { width: 80px; height: 30px; background: #222; margin: -20px auto 20px auto; border-radius: 0 0 10px 10px; }
+        
+        .mockup-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
         .shortcut-section { margin-top: 20px; background: #2c2c2e; padding: 15px; border-radius: 12px; border: 1px solid #444; }
-        .shortcut-btn { background: white; color: black; display: block; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 10px; box-sizing: border-box; }
-        
-        footer { margin-top: auto; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; padding-bottom: 10px; width: 100%; text-align: center; }
-        
-        .footer-link { color: #555; text-decoration: none; border-bottom: 1px dotted #555; transition: color 0.2s; cursor: pointer; font-size: 11px; margin-top: 5px; display: inline-block; }
-        .footer-link:hover { color: #ff693c; border-color: #ff693c; }
-        
-        .labs-product { font-size: 10px; color: #555; margin-top: 8px; font-weight: 600; letter-spacing: 0.5px; }
+        .shortcut-btn { background: white; color: black; display: block; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 10px; box-sizing: border-box; cursor: pointer; }
 
+        footer { margin-top: auto; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; padding-bottom: 10px; width: 100%; text-align: center; }
+        .footer-link { color: #555; text-decoration: none; border-bottom: 1px dotted #555; cursor: pointer; }
+
+        /* MODALS */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
-        .modal { 
-            background: #1c1c1e; 
-            border: 1px solid #333; 
-            padding: 25px; 
-            border-radius: 16px; 
-            width: 90%; 
-            max-width: 320px; 
-            transform: scale(0.9); 
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
-            max-height: 70vh; /* Reduced from 80vh for safe top margin */
-            overflow-y: auto; 
-        }
-        
-        .modal h3 { margin-top: 0; color: white; text-align: center; }
+        .modal { background: #1c1c1e; border: 1px solid #333; padding: 25px; border-radius: 16px; width: 90%; max-width: 320px; transform: scale(0.9); transition: transform 0.3s; max-height: 80vh; overflow-y: auto; }
         
         .color-legend { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
         .legend-item { display: flex; align-items: center; gap: 15px; font-size: 0.95rem; color: #ccc; }
         .dot { width: 16px; height: 16px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
         .dot.white { background: #fff; border: 1px solid #444; }
-        .dot.orange { background: #ff693c; box-shadow: 0 0 8px rgba(255, 105, 60, 0.6); }
-        .dot.yellow { background: #ffd700; box-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
+        .dot.orange { background: #ff693c; }
         .dot.gray { background: #444446; }
-        
         .close-modal { background: #333; border: none; color: white; width: 100%; padding: 12px; border-radius: 10px; margin-top: 25px; cursor: pointer; font-weight: 600; }
-
-        /* Release Notes Styles */
-        .release-list { text-align: left; padding-left: 20px; color: #ccc; font-size: 0.9rem; line-height: 1.6; margin-bottom: 25px; }
-        .github-btn { display: block; background: transparent; border: 1px solid #555; color: #888; text-decoration: none; padding: 12px; border-radius: 10px; text-align: center; font-weight: 600; font-size: 14px; transition: all 0.2s; }
-        .github-btn:hover { border-color: #ff693c; color: #ff693c; }
+        
+        .code-block { background: #000; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; color: #34c759; overflow-x: auto; white-space: pre; border: 1px solid #333; margin: 10px 0; }
+        .platform-tabs { display: flex; gap: 5px; margin-bottom: 15px; }
+        .tab { flex: 1; background: #333; padding: 8px; font-size: 12px; text-align: center; cursor: pointer; border-radius: 6px; color: #888; }
+        .tab.active { background: #ff693c; color: white; }
 
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -343,19 +205,16 @@ HTML_DASHBOARD = """
         <span id="ruler"></span>
         <h1>The <span id="animated-title" onclick="replayAnimation()">Grid.</span></h1>
         <div class="subtitle-container">
-            <p class="subtitle">Visualize your year.</p>
-            <button class="info-btn" onclick="openModal()" title="What do the colors mean?">i</button>
+            <p class="subtitle" id="device-subtitle">Visualize your year.</p>
+            <button class="info-btn" onclick="openModal()" title="Legend">i</button>
         </div>
     </div>
     
     <div class="content-wrapper">
         <button class="generate-btn" id="default-btn" onclick="generateDefault()">Get The Grid</button>
-
         <div class="separator">OR</div>
-
         <div class="customise-trigger" onclick="toggleCustomise(this)">
-            <span>Customise</span>
-            <span class="arrow">▼</span>
+            <span>Customise</span><span class="arrow">▼</span>
         </div>
 
         <div id="custom-section">
@@ -366,58 +225,36 @@ HTML_DASHBOARD = """
                     <option value="segregated_months">Segregated Months</option>
                     <option value="quarter">Current Quarter</option>
                     <option value="month">Current Month</option>
-                    <option value="fortnight">Fortnight (14 Days)</option>
                 </select>
             </div>
-
             <h2>Visuals</h2>
             <div class="toggle-container">
                 <span class="toggle-label">Highlight Weekends</span>
-                <label class="switch">
-                    <input type="checkbox" id="weekend-toggle">
-                    <span class="slider"></span>
-                </label>
+                <label class="switch"><input type="checkbox" id="weekend-toggle"><span class="slider"></span></label>
             </div>
-
-            <h2>Progress Bar Style</h2>
+            <h2>Progress Bar</h2>
             <div style="margin-bottom: 20px;">
                 <select id="bar-style" style="width: 100%">
-                    <option value="segmented">Segmented (Default)</option>
+                    <option value="segmented">Segmented</option>
                     <option value="solid">Solid</option>
                     <option value="minimal">Minimal</option>
                 </select>
             </div>
-
-            <h2>Dates of Importance</h2>
-            <div id="date-list">
-                </div>
+            <h2>Important Dates</h2>
+            <div id="date-list"></div>
             <button class="btn-add" onclick="addDate()">+ Add another date</button>
-
             <h2>Theme</h2>
             <div class="theme-switch">
-                <label class="theme-option active" id="lbl-dark" onclick="setTheme('dark')">
-                    Dark
-                    <input type="radio" name="theme" value="dark" checked>
-                </label>
-                <label class="theme-option" id="lbl-light" onclick="setTheme('light')">
-                    Light
-                    <input type="radio" name="theme" value="light">
-                </label>
+                <label class="theme-option active" id="lbl-dark" onclick="setTheme('dark')">Dark<input type="radio" name="theme" value="dark" checked></label>
+                <label class="theme-option" id="lbl-light" onclick="setTheme('light')">Light<input type="radio" name="theme" value="light"></label>
             </div>
-
             <h2>Signature</h2>
-            <div style="margin-bottom: 20px;">
-                <input type="text" id="signature" placeholder="Add your signature..." maxlength="20">
-            </div>
-
+            <div style="margin-bottom: 20px;"><input type="text" id="signature" placeholder="Add your signature..." maxlength="20"></div>
             <button class="generate-custom-btn" onclick="generateCustom()">Generate Custom Link</button>
         </div>
 
         <div class="result" id="result">
-            <div id="default-success" class="default-success">✓ Link Copied.</div>
-            <div id="mock-msg" class="mock-msg">You expanded the custom menu, changed absolutely nothing, and hit generate. We copied the link anyway, but we're judging you.</div>
-
-            <div id="custom-url-display" class="custom-url-display">
+            <div id="custom-url-display">
                 <p style="margin-bottom: 5px; font-size: 0.9rem; color: #888;">Step 1: Copy this URL.</p>
                 <div class="url-container">
                     <div class="url-box" id="urlBox"></div>
@@ -430,448 +267,201 @@ HTML_DASHBOARD = """
                 <img id="mockup-img" class="mockup-img" src="" alt="Preview">
             </div>
 
+            <div id="monitor-frame" class="monitor-mockup">
+                <img id="monitor-img" class="mockup-img" src="" alt="Preview">
+            </div>
+            <div id="monitor-stand" class="monitor-stand" style="display:none"></div>
+
             <div class="shortcut-section">
-                <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: #ccc;">Step 2: Install the Shortcut.</p>
-                <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: #888; line-height: 1.4;">
-                    Since you probably need hand-holding: <strong>First add the shortcut, then click on the three dots (...) to edit it.</strong> Paste the URL where indicated. Don't mess it up.
-                </p>
-                <a href="https://www.icloud.com/shortcuts/99a190f4001844f9ade585fc8eafd47e" class="shortcut-btn" target="_blank">Install iOS Shortcut</a>
+                <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: #ccc;">Step 2: Automate it.</p>
+                <button onclick="openAutomationModal()" class="shortcut-btn">View Setup Instructions</button>
             </div>
         </div>
     </div>
 
     <footer>
         &lt;/&gt; with ❤️ by Spandan.<br>
-        <span onclick="openReleaseModal()" class="footer-link">Version 3.1 Prod.</span>
-        <div class="labs-product">An S² Labs Product 🥼</div>
+        <span onclick="openReleaseModal()" class="footer-link">Version 4.0 Multi-Platform</span>
     </footer>
 
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
         <div class="modal">
             <h3>The Legend</h3>
             <div class="color-legend">
-                <div class="legend-item">
-                    <span class="dot white"></span>
-                    <span><strong>The Past:</strong> Gone. Wasted. Irrecoverable. Stop looking at it.</span>
-                </div>
-                <div class="legend-item">
-                    <span class="dot orange"></span>
-                    <span><strong>The Present:</strong> You are here. Try not to screw this one up.</span>
-                </div>
-                <div class="legend-item">
-                    <span class="dot yellow"></span>
-                    <span><strong>The "Special":</strong> Dates you think matter. You'll probably forget them.</span>
-                </div>
-                <div class="legend-item">
-                    <span class="dot gray"></span>
-                    <span><strong>The Void:</strong> The future. Try to fill it with something better than the white ones.</span>
-                </div>
+                <div class="legend-item"><span class="dot white"></span><span><strong>The Past:</strong> Gone.</span></div>
+                <div class="legend-item"><span class="dot orange"></span><span><strong>The Present:</strong> Today.</span></div>
+                <div class="legend-item"><span class="dot gray"></span><span><strong>The Future:</strong> The void.</span></div>
             </div>
-            <button class="close-modal" onclick="toggleModal(false)">Whatever</button>
+            <button class="close-modal" onclick="toggleModal(false)">Close</button>
         </div>
     </div>
 
-    <div class="modal-overlay" id="releaseModalOverlay" onclick="closeReleaseModal(event)">
-        <div class="modal">
-            <h3>Version 3.1 Notes</h3>
-            <ul class="release-list">
-                <li><strong>Emoji Chooser:</strong> Because a colored dot wasn't "aesthetic" enough for your Instagram story. Send your "thanks" to <a href="https://www.instagram.com/im.amitpatwa" target="_blank" style="color: #ff693c; text-decoration: none;">Amit</a> for the extra bloat.</li>
-                <li><strong>We Killed the 'Year' Input:</strong> It's an annual calendar, Einstein. Stop trying to schedule things for 2027.</li>
-                <li><strong>Goldfish Memory Patch:</strong> The app now remembers your settings and dates locally. Because apparently, typing your own name more than once is too much to ask of you.</li>
-                <li><strong>Live Signature:</strong> Type your name. See it appear. It's not magic, it's JavaScript. Try not to be impressed.</li>
-                <li><strong>Weekend Highlight:</strong> Visual proof that you only live for 28% of your life.</li>
-                <li><strong>Smart Device Detection:</strong> We know what iPhone you have. If you have a Notch, we judge you. If you have an Island, we judge you harder.</li>
-                <li><strong>Segregated Months:</strong> A new view for those easily overwhelmed by 365 dots. Deep breaths.</li>
-                <li><strong>Layout Fixes:</strong> Fixed the Full Year view alignment. It used to look terrible. Now it looks slightly less terrible. Thanks to <a href="https://www.linkedin.com/in/kartikeya-srivastava-b527901a4/?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app" target="_blank" style="color: #ff693c; text-decoration: none;">Kartikey</a> for pointing out the UI inconsistency we were praying you wouldn't notice.</li>
-            </ul>
-            <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="github-btn">View Source on GitHub</a>
-            <button class="close-modal" onclick="toggleReleaseModal(false)">Close</button>
+    <div class="modal-overlay" id="autoModalOverlay" onclick="closeAutoModal(event)">
+        <div class="modal" style="max-width: 500px;">
+            <h3>Automate Wallpaper</h3>
+            <div class="platform-tabs">
+                <div class="tab active" onclick="showTab('ios')" id="tab-ios">iOS</div>
+                <div class="tab" onclick="showTab('win')" id="tab-win">Windows</div>
+                <div class="tab" onclick="showTab('mac')" id="tab-mac">Mac</div>
+            </div>
+
+            <div id="content-ios">
+                <p style="font-size:0.9rem; color:#ccc;">Use the Shortcuts app.</p>
+                <a href="https://www.icloud.com/shortcuts/99a190f4001844f9ade585fc8eafd47e" class="shortcut-btn" target="_blank" style="text-align:center; border:1px solid #ccc;">Install iOS Shortcut</a>
+            </div>
+
+            <div id="content-win" style="display:none">
+                <p style="font-size:0.9rem; color:#ccc;">1. Open <strong>Task Scheduler</strong>.<br>2. Create Basic Task (Daily).<br>3. Action: "Start a Program".<br>4. Program: <code>powershell.exe</code><br>5. Arguments (Paste this):</p>
+                <div class="code-block" id="win-code"></div>
+                <p style="font-size:0.8rem; color:#666;">Note: Replaces 'C:\wallpaper.png'</p>
+            </div>
+
+            <div id="content-mac" style="display:none">
+                <p style="font-size:0.9rem; color:#ccc;">1. Open <strong>Automator</strong> -> Application.<br>2. Add action: <strong>"Get Specified URLs"</strong> (Paste your link).<br>3. Add action: <strong>"Download URLs"</strong>.<br>4. Add action: <strong>"Set Desktop Picture"</strong>.<br>5. Save as App & Add to Login Items.</p>
+            </div>
+            
+            <button class="close-modal" onclick="toggleAutoModal(false)">Close</button>
         </div>
     </div>
 
     <script>
+        // --- LOGIC ---
+        let currentPlatform = 'mobile'; // 'mobile' | 'desktop'
         const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        
-        function getMonthOptionsHtml(selected) {
-            let html = '<option value="" disabled ' + (!selected ? 'selected' : '') + '>Month</option>';
-            MONTHS.forEach((m, i) => {
-                const val = i + 1;
-                const isSel = val == selected ? 'selected' : '';
-                html += `<option value="${val}" ${isSel}>${m}</option>`;
-            });
-            return html;
-        }
 
-        function getDayOptionsHtml(selected) {
-            let html = '<option value="" disabled ' + (!selected ? 'selected' : '') + '>Day</option>';
-            for (let i = 1; i <= 31; i++) {
-                const isSel = i == selected ? 'selected' : '';
-                html += `<option value="${i}" ${isSel}>${i}</option>`;
-            }
-            return html;
-        }
-
-        function getEmojiOptionsHtml(selected) {
-            const emojis = ["🟡", "🍰", "❤️", "🚀", "💰", "✈️", "💀", "🍺"];
-            let html = "";
-            emojis.forEach(e => {
-                const val = e === '🟡' ? '' : e;
-                const isSel = val === selected ? 'selected' : '';
-                html += `<option value="${val}" ${isSel}>${e}</option>`;
-            });
-            return html;
-        }
-
-        // --- LOCAL STORAGE LOGIC ---
-        function savePreferences() {
-            const prefs = {
-                viewMode: document.getElementById('view-mode').value,
-                barStyle: document.getElementById('bar-style').value,
-                highlightWeekends: document.getElementById('weekend-toggle').checked,
-                theme: selectedTheme,
-                signature: document.getElementById('signature').value,
-                dates: []
-            };
+        function detectPlatform() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            const isMobile = /iphone|ipad|ipod|android/i.test(userAgent);
             
+            if (!isMobile) {
+                currentPlatform = 'desktop';
+                document.getElementById('device-subtitle').innerText = "Visualize your year (Desktop Mode).";
+                // Swap Mockups
+                document.getElementById('phone-frame').style.display = 'none';
+                document.getElementById('monitor-frame').style.display = 'block';
+                document.getElementById('monitor-stand').style.display = 'block';
+                // Default Tab
+                showTab(userAgent.includes('mac') ? 'mac' : 'win');
+            } else {
+                document.getElementById('device-subtitle').innerText = "Visualize your year (Mobile Mode).";
+            }
+        }
+
+        function getLink(customDates, theme, sig, mode, bar, weekends) {
+            const baseUrl = window.location.origin + "/api/image";
+            const params = new URLSearchParams();
+            if(customDates) params.append('dates', customDates);
+            params.append('theme', theme);
+            if(sig) params.append('signature', sig);
+            params.append('mode', mode);
+            params.append('bar_style', bar);
+            if(weekends) params.append('highlight_weekends', 'true');
+            params.append('platform', currentPlatform);
+            return baseUrl + "?" + params.toString();
+        }
+
+        function generateDefault() {
+            const link = getLink('', 'dark', '', 'year', 'segmented', false);
+            handleResult(link);
+        }
+
+        function generateCustom() {
             // Collect Dates
             const rows = document.querySelectorAll('.date-row');
+            let dateEntries = [];
             rows.forEach(row => {
                 const m = row.querySelector('.month-select').value;
                 const d = row.querySelector('.day-select').value;
                 const e = row.querySelector('.emoji-select').value;
-                if(m || d || e) {
-                    prefs.dates.push({m: m, d: d, e: e});
+                if (m && d) {
+                    let entry = `${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+                    if (e) entry += `|${e}`;
+                    dateEntries.push(entry);
                 }
             });
-            
-            localStorage.setItem('grid_prefs_v3', JSON.stringify(prefs));
+            const theme = document.querySelector('input[name="theme"]:checked').value;
+            const sig = document.getElementById('signature').value;
+            const mode = document.getElementById('view-mode').value;
+            const bar = document.getElementById('bar-style').value;
+            const weekends = document.getElementById('weekend-toggle').checked;
+
+            const link = getLink(dateEntries.join(','), theme, sig, mode, bar, weekends);
+            handleResult(link);
         }
 
-        function loadPreferences() {
-            const stored = localStorage.getItem('grid_prefs_v3');
-            if (!stored) {
-                addDate(); // Default empty row
-                return;
-            }
-
-            try {
-                const prefs = JSON.parse(stored);
-                
-                // Set Fields
-                if(prefs.viewMode) document.getElementById('view-mode').value = prefs.viewMode;
-                if(prefs.barStyle) document.getElementById('bar-style').value = prefs.barStyle;
-                if(prefs.highlightWeekends !== undefined) document.getElementById('weekend-toggle').checked = prefs.highlightWeekends;
-                if(prefs.theme) setTheme(prefs.theme);
-                if(prefs.signature) document.getElementById('signature').value = prefs.signature;
-
-                // Rebuild Dates
-                const container = document.getElementById('date-list');
-                container.innerHTML = ''; // Clear existing
-                
-                if (prefs.dates && prefs.dates.length > 0) {
-                    prefs.dates.forEach(d => {
-                        addDate(d.m, d.d, d.e);
-                    });
-                } else {
-                    addDate();
-                }
-
-            } catch (e) {
-                console.error("Failed to load prefs", e);
-                addDate();
-            }
-        }
-
-        // --- DEVICE DETECTION LOGIC ---
-        function detectDeviceType() {
-            // Check logical screen width to guess device family
-            const width = window.screen.width;
-            const frame = document.getElementById('phone-frame');
+        function handleResult(url) {
+            document.getElementById('urlBox').innerText = url;
+            document.getElementById('result').style.display = "block";
             
-            let deviceType = 'dynamic-island'; // Default
-
-            // Heuristic based on logical width
-            // 393/430 = Dynamic Island (14 Pro, 15, 16)
-            // 390/428/375/414 = Notch (12, 13, 14, 11, X)
-            if (width === 393 || width === 430) {
-                deviceType = 'dynamic-island';
-            } else if (width === 390 || width === 428 || width === 375 || width === 414) {
-                deviceType = 'notch';
-            }
-
-            // Apply directly
-            if (deviceType === 'notch') {
-                frame.classList.remove('dynamic-island');
-                frame.classList.add('notch');
+            if(currentPlatform === 'desktop') {
+                document.getElementById('monitor-img').src = url;
+                // Generate Powershell Snippet
+                const psCode = `Invoke-WebRequest -Uri "${url}" -OutFile "C:\\wallpaper.png"\nSet-ItemProperty -Path "HKCU:\\Control Panel\\Desktop" -Name Wallpaper -Value "C:\\wallpaper.png"\nRUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters`;
+                document.getElementById('win-code').innerText = psCode;
             } else {
-                frame.classList.remove('notch');
-                frame.classList.add('dynamic-island');
+                document.getElementById('mockup-img').src = url;
             }
+            document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
         }
 
-        // --- TITLE ANIMATION ---
-        let isAnimating = false;
-
-        function animateTitle() {
-            if (isAnimating) return;
-            isAnimating = true;
-
-            const el = document.getElementById('animated-title');
-            const ruler = document.getElementById('ruler');
-            
-            const seq = [
-                { type: 'html', content: '<span class="dot white title-dot"></span>', time: 700 },
-                { type: 'html', content: '<span class="dot orange title-dot"></span>', time: 700 },
-                { type: 'html', content: '<span class="dot gray title-dot"></span>', time: 700 },
-                { type: 'text', content: 'Grid.', time: 0 } 
-            ];
-            
-            let i = 0;
-            
-            function step() {
-                const item = seq[i];
-                if (item.type === 'text') ruler.innerText = item.content;
-                else ruler.innerHTML = item.content;
-                
-                const newWidth = ruler.offsetWidth;
-
-                el.style.opacity = 0;
-                
-                setTimeout(() => {
-                    el.style.width = newWidth + 'px';
-                    
-                    if (item.type === 'text') el.innerText = item.content;
-                    else el.innerHTML = item.content;
-                    
-                    el.style.opacity = 1;
-                    
-                    i++;
-                    if (i < seq.length) {
-                        setTimeout(step, item.time);
-                    } else {
-                        isAnimating = false;
-                    }
-                    
-                }, 200); 
-            }
-            step();
+        // --- Helper Functions ---
+        function copyToClipboard() {
+            navigator.clipboard.writeText(document.getElementById('urlBox').innerText);
+            alert("Copied!");
         }
-        
-        function replayAnimation() { animateTitle(); }
 
+        // --- Init ---
         window.onload = function() {
-            const isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
-            
-            // 1. Load Saved Data
-            loadPreferences();
-            
-            // 2. Detect Device Type and set Preview
-            detectDeviceType();
-            
-            // 3. Init Title Width & Animation
+            detectPlatform();
+            addDate(); // Add one empty date row
+            animateTitle();
+        };
+
+        // --- Animation ---
+        function animateTitle() {
             const el = document.getElementById('animated-title');
             const ruler = document.getElementById('ruler');
             ruler.innerText = "Grid.";
             el.style.width = ruler.offsetWidth + 'px';
-            
-            setTimeout(animateTitle, 2000);
-
-            if (!isApple) {
-                const btn = document.getElementById('default-btn');
-                btn.innerText = "Sorry, currently available only on iOS / iPadOS";
-                btn.disabled = true;
-                document.querySelector('.separator').style.display = 'none';
-                document.querySelector('.customise-trigger').style.display = 'none';
-                document.getElementById('custom-section').style.display = 'none';
-                document.querySelector('footer').style.marginTop = 'auto';
-            }
-        };
-
-        let selectedTheme = 'dark';
-
-        function toggleCustomise(trigger) {
-            const section = document.getElementById('custom-section');
-            if (section.style.display === 'block') {
-                section.style.display = 'none';
-                trigger.classList.remove('active');
-            } else {
-                section.style.display = 'block';
-                trigger.classList.add('active');
-            }
         }
+        function replayAnimation() { animateTitle(); }
 
-        // --- LEGEND MODAL ---
-        function openModal() { toggleModal(true); }
-        function closeModal(e) { if(e.target === document.getElementById('modalOverlay')) toggleModal(false); }
-        function toggleModal(show) {
-            const overlay = document.getElementById('modalOverlay');
-            const modal = overlay.querySelector('.modal');
-            if (show) {
-                overlay.style.display = 'flex';
-                void overlay.offsetWidth;
-                overlay.style.opacity = '1';
-                modal.style.transform = 'scale(1)';
-            } else {
-                overlay.style.opacity = '0';
-                modal.style.transform = 'scale(0.9)';
-                setTimeout(() => { overlay.style.display = 'none'; }, 300);
-            }
-        }
+        // --- Modals ---
+        function openModal() { document.getElementById('modalOverlay').style.display = 'flex'; setTimeout(()=>document.getElementById('modalOverlay').style.opacity=1,10); }
+        function closeModal(e) { if(e.target.id === 'modalOverlay') toggleModal(false); }
+        function toggleModal(s) { document.getElementById('modalOverlay').style.opacity=s?1:0; setTimeout(()=>document.getElementById('modalOverlay').style.display=s?'flex':'none',300); }
+        
+        function openAutomationModal() { document.getElementById('autoModalOverlay').style.display = 'flex'; setTimeout(()=>document.getElementById('autoModalOverlay').style.opacity=1,10); }
+        function closeAutoModal(e) { if(e.target.id === 'autoModalOverlay') toggleAutoModal(false); }
+        function toggleAutoModal(s) { document.getElementById('autoModalOverlay').style.opacity=s?1:0; setTimeout(()=>document.getElementById('autoModalOverlay').style.display=s?'flex':'none',300); }
 
-        // --- RELEASE NOTES MODAL ---
-        function openReleaseModal() { toggleReleaseModal(true); }
-        function closeReleaseModal(e) { if(e.target === document.getElementById('releaseModalOverlay')) toggleReleaseModal(false); }
-        function toggleReleaseModal(show) {
-            const overlay = document.getElementById('releaseModalOverlay');
-            const modal = overlay.querySelector('.modal');
-            if (show) {
-                overlay.style.display = 'flex';
-                void overlay.offsetWidth;
-                overlay.style.opacity = '1';
-                modal.style.transform = 'scale(1)';
-            } else {
-                overlay.style.opacity = '0';
-                modal.style.transform = 'scale(0.9)';
-                setTimeout(() => { overlay.style.display = 'none'; }, 300);
-            }
-        }
-
-        function addDate(selM, selD, selE) {
-            const container = document.getElementById('date-list');
-            const div = document.createElement('div');
-            div.className = 'date-row';
-            div.innerHTML = `
-                <div class="date-picker-group">
-                    <select class="month-select">${getMonthOptionsHtml(selM)}</select>
-                    <select class="day-select">${getDayOptionsHtml(selD)}</select>
-                </div>
-                <select class="emoji-select">${getEmojiOptionsHtml(selE)}</select>
-                <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
-            `;
-            container.appendChild(div);
-        }
-
-        function removeDate(btn) {
-            const container = document.getElementById('date-list');
-            if (container.children.length > 1) btn.parentElement.remove();
-            else {
-                const selects = btn.parentElement.querySelectorAll('select');
-                selects.forEach(s => s.selectedIndex = 0);
-            }
-        }
-
-        function setTheme(theme) {
-            selectedTheme = theme;
-            document.getElementById('lbl-dark').className = theme === 'dark' ? 'theme-option active' : 'theme-option';
-            document.getElementById('lbl-light').className = theme === 'light' ? 'theme-option active' : 'theme-option';
-        }
-
-        function generateDefault() {
-            const baseUrl = window.location.origin + "/api/image";
-            const fullUrl = baseUrl + "?theme=dark";
-            const btn = document.getElementById('default-btn');
-            
-            navigator.clipboard.writeText(fullUrl).then(() => {
-                const originalText = btn.innerText;
-                btn.innerText = "Link Copied";
-                btn.classList.add("success");
-                btn.disabled = true;
-
-                document.getElementById('result').style.display = "block";
-                document.getElementById('default-success').style.display = "block";
-                document.getElementById('mock-msg').style.display = "none";
-                document.getElementById('custom-url-display').style.display = "none";
-                document.getElementById('custom-section').style.display = "none";
-                
-                // Show Mockup even for default
-                document.getElementById('mockup-img').src = fullUrl;
-                
-                document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
-
-                setTimeout(() => { 
-                    btn.innerText = originalText; 
-                    btn.classList.remove("success");
-                    btn.disabled = false;
-                }, 2000);
-            }).catch(err => {
-                generateCustom();
+        function showTab(t) {
+            ['ios','win','mac'].forEach(x => {
+                document.getElementById(`content-${x}`).style.display = x===t ? 'block' : 'none';
+                document.getElementById(`tab-${x}`).className = x===t ? 'tab active' : 'tab';
             });
         }
 
-        function generateCustom() {
-            // 1. Save State
-            savePreferences();
+        // --- Date Picker Logic ---
+        function getMonthOptionsHtml() { return `<option value="" disabled selected>M</option>` + MONTHS.map((m,i)=>`<option value="${i+1}">${m}</option>`).join(''); }
+        function getDayOptionsHtml() { return `<option value="" disabled selected>D</option>` + Array.from({length:31},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join(''); }
+        function getEmojiOptionsHtml() { return ["🟡", "🍰", "❤️", "🚀", "💰"].map(e => `<option value="${e=='🟡'?'':e}">${e}</option>`).join(''); }
 
-            const rows = document.querySelectorAll('.date-row');
-            let dateEntries = [];
-            
-            rows.forEach(row => {
-                const month = row.querySelector('.month-select').value;
-                const day = row.querySelector('.day-select').value;
-                const emoji = row.querySelector('.emoji-select').value;
-                
-                if (month && day) {
-                    const mStr = month.toString().padStart(2, '0');
-                    const dStr = day.toString().padStart(2, '0');
-                    
-                    let entry = `${mStr}-${dStr}`;
-                    if (emoji) {
-                        entry += `|${emoji}`;
-                    }
-                    dateEntries.push(entry);
-                }
-            });
-
-            const sig = document.getElementById('signature').value.trim();
-            const mode = document.getElementById('view-mode').value;
-            const barStyle = document.getElementById('bar-style').value;
-            const highlightWeekends = document.getElementById('weekend-toggle').checked;
-            
-            const val = dateEntries.join(',');
-            
-            const baseUrl = window.location.origin + "/api/image";
-            const params = new URLSearchParams();
-            
-            if (val) params.append('dates', val);
-            params.append('theme', selectedTheme);
-            if (sig) params.append('signature', sig);
-            if (mode !== 'year') params.append('mode', mode);
-            if (barStyle !== 'segmented') params.append('bar_style', barStyle);
-            if (highlightWeekends) params.append('highlight_weekends', 'true');
-            
-            const fullUrl = baseUrl + "?" + params.toString();
-            const isDefault = dateEntries.length === 0 && selectedTheme === 'dark' && sig === '' && mode === 'year' && barStyle === 'segmented' && !highlightWeekends;
-
-            // Set Mockup Image
-            document.getElementById('mockup-img').src = fullUrl;
-
-            if (isDefault) {
-                navigator.clipboard.writeText(fullUrl).then(() => {
-                    document.getElementById('result').style.display = "block";
-                    document.getElementById('default-success').style.display = "block";
-                    document.getElementById('mock-msg').style.display = "block";
-                    document.getElementById('custom-url-display').style.display = "none";
-                    document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
-                });
-            } else {
-                document.getElementById('urlBox').innerText = fullUrl;
-                document.getElementById('result').style.display = "block";
-                document.getElementById('default-success').style.display = "none";
-                document.getElementById('mock-msg').style.display = "none";
-                document.getElementById('custom-url-display').style.display = "block";
-                document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
-            }
+        function addDate() {
+            const div = document.createElement('div'); div.className = 'date-row';
+            div.innerHTML = `<div class="date-picker-group"><select class="month-select">${getMonthOptionsHtml()}</select><select class="day-select">${getDayOptionsHtml()}</select></div><select class="emoji-select">${getEmojiOptionsHtml()}</select><button class="btn-icon" onclick="this.parentElement.remove()">×</button>`;
+            document.getElementById('date-list').appendChild(div);
         }
-
-        function copyToClipboard() {
-            const text = document.getElementById('urlBox').innerText;
-            navigator.clipboard.writeText(text).then(() => {
-                const btn = document.querySelector('.copy-btn');
-                const originalText = btn.innerText;
-                btn.innerText = "Copied!";
-                btn.style.background = "#ff693c";
-                setTimeout(() => { btn.innerText = originalText; btn.style.background = "#333"; }, 2000);
-            });
+        
+        function toggleCustomise(t) { 
+            const s = document.getElementById('custom-section'); 
+            const isHidden = s.style.display !== 'block';
+            s.style.display = isHidden ? 'block' : 'none';
+            if(isHidden) t.classList.add('active'); else t.classList.remove('active');
+        }
+        function setTheme(t) {
+            document.getElementById('lbl-dark').className = t==='dark'?'theme-option active':'theme-option';
+            document.getElementById('lbl-light').className = t==='light'?'theme-option active':'theme-option';
         }
     </script>
 </body>
@@ -882,347 +472,244 @@ HTML_DASHBOARD = """
 def home():
     return HTML_DASHBOARD
 
-# --- NEW: SERVE FONTS TO FRONTEND ---
 @app.route('/fonts/<path:filename>')
 def serve_fonts(filename):
     return send_from_directory(FONT_DIR, filename)
 
 @app.route('/api/image')
 def generate_grid():
-    # 1. Get Parameters
+    # 1. Parameters
     dates_param = request.args.get('dates', '')
     theme_param = request.args.get('theme', 'dark')
     signature_param = request.args.get('signature', '')
     mode_param = request.args.get('mode', 'year')
     bar_style_param = request.args.get('bar_style', 'segmented')
-    highlight_weekends_param = request.args.get('highlight_weekends', 'false') == 'true'
+    highlight_weekends = request.args.get('highlight_weekends', 'false') == 'true'
+    platform_param = request.args.get('platform', 'mobile')
 
-    # 2. Select Theme Colors
-    palette = THEMES.get(theme_param, THEMES['dark'])
+    # 2. Config based on Platform
+    is_desktop = platform_param == 'desktop'
+    IMG_W = DESKTOP_WIDTH if is_desktop else MOBILE_WIDTH
+    IMG_H = DESKTOP_HEIGHT if is_desktop else MOBILE_HEIGHT
     
-    # 3. Setup Time (IST)
+    palette = THEMES.get(theme_param, THEMES['dark'])
     ist_offset = datetime.timedelta(hours=5, minutes=30)
     now = datetime.datetime.now(datetime.timezone.utc) + ist_offset
     current_year = now.year
 
-    # 4. Parse Special Dates & Emojis early
+    # 3. Parse Dates
     special_dates = {}
     if dates_param:
-        items = dates_param.split(',')
-        for item in items:
-            if '|' in item:
-                d_str, emoji = item.split('|', 1)
-            else:
-                d_str, emoji = item, None
+        for item in dates_param.split(','):
+            if '|' in item: d_str, emoji = item.split('|', 1)
+            else: d_str, emoji = item, None
             try:
-                parts = d_str.strip().split('-')
-                if len(parts) == 2:
-                    m, d = int(parts[0]), int(parts[1])
-                    try:
-                        date_obj = datetime.date(current_year, m, d)
-                        special_dates[date_obj] = emoji
-                    except ValueError: pass
-            except ValueError: pass
+                m, d = map(int, d_str.strip().split('-'))
+                special_dates[datetime.date(current_year, m, d)] = emoji
+            except: pass
 
-    # 5. Determine Grid Dimensions & Range (Shared)
-    img = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT), color=palette['BG'])
+    # 4. Canvas
+    img = Image.new('RGB', (IMG_W, IMG_H), color=palette['BG'])
     draw = ImageDraw.Draw(img)
-    
-    # Fonts
-    try:
-        font_small = ImageFont.truetype(FONT_PATH, 40)
-    except:
-        font_small = ImageFont.load_default()
+    try: font_small = ImageFont.truetype(FONT_PATH, 40)
+    except: font_small = ImageFont.load_default()
+    try: font_sig = ImageFont.truetype(FONT_SIGNATURE_PATH, 55)
+    except: font_sig = font_small
 
-    try:
-        font_signature = ImageFont.truetype(FONT_SIGNATURE_PATH, 55)
-    except:
-        font_signature = font_small
-
-    # Calculate global days left (common for all modes)
+    # 5. Drawing Logic
     start_date_global = datetime.date(current_year, 1, 1)
     end_date_global = datetime.date(current_year, 12, 31)
     total_days_global = (end_date_global - start_date_global).days + 1
-    days_passed_global = (now.date() - start_date_global).days + 1
-    if days_passed_global < 0: days_passed_global = 0
-    if days_passed_global > total_days_global: days_passed_global = total_days_global
-    days_left = total_days_global - days_passed_global
+    days_passed = (now.date() - start_date_global).days + 1
+    days_passed = max(0, min(days_passed, total_days_global))
+    days_left = total_days_global - days_passed
 
-    # --- MODE SPECIFIC LOGIC ---
+    # --- Mode: Segregated Months ---
     if mode_param == 'segregated_months':
-        # --- NEW YEAR CALENDAR MODE (12 Month Grid) ---
-        
-        # Grid Configuration for 12 months
-        COLS = 3
-        ROWS = 4
-        
-        # Visual config for mini-grids
-        MONTH_DOT_RADIUS = 12
-        MONTH_DOT_PADDING = 10
-        MINI_GRID_COLS = 7 # 7 days wide
-        
-        # Calculate width of one month block
-        # Width = (12*2 * 7) + (10 * 6) = 168 + 60 = 228 px
-        BLOCK_WIDTH = (MONTH_DOT_RADIUS * 2 * MINI_GRID_COLS) + (MONTH_DOT_PADDING * (MINI_GRID_COLS - 1))
-        
-        # Calculate margins
-        # Total content width = 3 * BLOCK_WIDTH + 2 * GAP
-        BLOCK_GAP_X = 150
-        TOTAL_CONTENT_WIDTH = (COLS * BLOCK_WIDTH) + ((COLS - 1) * BLOCK_GAP_X)
-        START_X_GLOBAL = (IMAGE_WIDTH - TOTAL_CONTENT_WIDTH) // 2
-        
-        # Vertical Tuning (User Request)
-        # Previous START_Y_GLOBAL was 350 (too high)
-        START_Y_GLOBAL = 750 # Lowered to clear the clock area
-        
-        # Previous row step was 400 (too gapped)
-        ROW_HEIGHT_STEP = 340 # Tightened vertical spacing
-        
-        month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
-        
-        current_iter_date = datetime.date(current_year, 1, 1)
-        
-        for m in range(1, 13): # 1 to 12
-            # Find grid position (0-2 col, 0-3 row)
-            idx = m - 1
-            row_idx = idx // COLS
-            col_idx = idx % COLS
-            
-            month_start_x = START_X_GLOBAL + col_idx * (BLOCK_WIDTH + BLOCK_GAP_X)
-            month_start_y = START_Y_GLOBAL + row_idx * (ROW_HEIGHT_STEP) 
-            
-            # Draw Month Name
-            draw.text((month_start_x, month_start_y - 60), month_names[idx], font=font_small, fill=palette['INACTIVE'])
-            
-            # Draw Days for this month
-            days_in_month = calendar.monthrange(current_year, m)[1]
-            
-            for d in range(1, days_in_month + 1):
-                current_day_date = datetime.date(current_year, m, d)
-                
-                # Determine Color
-                draw_color = palette['INACTIVE']
-                if highlight_weekends_param and current_day_date.weekday() >= 5:
-                    draw_color = palette['WEEKEND']
-                
-                draw_emoji_img = None
-                
-                if current_day_date in special_dates:
-                    emoji_char = special_dates[current_day_date]
-                    if emoji_char:
-                        draw_emoji_img = get_emoji_image(emoji_char)
-                        if not draw_emoji_img: draw_color = palette['SPECIAL']
-                    else:
-                        draw_color = palette['SPECIAL']
-                elif current_day_date == now.date():
-                    draw_color = palette['ACTIVE']
-                elif current_day_date < now.date():
-                    draw_color = palette['PASSED']
-
-                # Calc dot position inside block (Row-major, 7 cols wide)
-                d_idx = d - 1
-                dot_row = d_idx // MINI_GRID_COLS
-                dot_col = d_idx % MINI_GRID_COLS
-                
-                x = month_start_x + dot_col * (MONTH_DOT_RADIUS * 2 + MONTH_DOT_PADDING)
-                y = month_start_y + dot_row * (MONTH_DOT_RADIUS * 2 + MONTH_DOT_PADDING)
-                
-                if draw_emoji_img:
-                    target_size = (MONTH_DOT_RADIUS * 2, MONTH_DOT_RADIUS * 2)
-                    emoji_resized = draw_emoji_img.resize(target_size, Image.Resampling.LANCZOS)
-                    img.paste(emoji_resized, (int(x), int(y)), emoji_resized)
-                else:
-                    draw.ellipse((x, y, x + MONTH_DOT_RADIUS * 2, y + MONTH_DOT_RADIUS * 2), fill=draw_color)
-        
-        # Determine text Y for footer elements relative to the last row
-        grid_bottom_y = START_Y_GLOBAL + (3 * ROW_HEIGHT_STEP) + 220
-
-    else:
-        # --- ORIGINAL MODES (Year, Quarter, Month, Fortnight) ---
-        grid_cols = GRID_COLS
-        grid_rows = GRID_ROWS
-        dot_radius = DOT_RADIUS
-        dot_spacing = DOT_PADDING
-        
-        if mode_param == 'month':
-            start_date = datetime.date(current_year, now.month, 1)
-            last_day = calendar.monthrange(current_year, now.month)[1]
-            end_date = datetime.date(current_year, now.month, last_day)
-            grid_cols, grid_rows = 7, 5
-            dot_radius, dot_spacing = 35, 45
-            days_left_mode = (end_date - now.date()).days
-            if days_left_mode < 0: days_left_mode = 0
-            range_text = now.strftime("%b")
-            
-        elif mode_param == 'quarter':
-            q = (now.month - 1) // 3 + 1
-            start_month = (q - 1) * 3 + 1
-            end_month = start_month + 2
-            start_date = datetime.date(current_year, start_month, 1)
-            last_day_q = calendar.monthrange(current_year, end_month)[1]
-            end_date = datetime.date(current_year, end_month, last_day_q)
-            grid_cols, grid_rows = 10, 10
-            dot_radius, dot_spacing = 25, 25
-            days_left_mode = (end_date - now.date()).days
-            if days_left_mode < 0: days_left_mode = 0
-            range_text = f"Q{q}"
-
-        elif mode_param == 'fortnight':
-            start_date = now.date() - datetime.timedelta(days=now.weekday())
-            end_date = start_date + datetime.timedelta(days=13)
-            grid_cols, grid_rows = 7, 2
-            dot_radius, dot_spacing = 45, 50
-            days_left_mode = (end_date - now.date()).days
-            if days_left_mode < 0: days_left_mode = 0
-            range_text = "period"
-
-        else: # Year (Default Single Grid)
-            start_date = datetime.date(current_year, 1, 1)
-            end_date = datetime.date(current_year, 12, 31)
-            days_left_mode = days_left
-            range_text = "year"
-        
-        # Common Draw Loop for these modes
-        DOT_SPACING = dot_spacing
-        total_grid_w = (grid_cols * (dot_radius * 2)) + ((grid_cols - 1) * DOT_SPACING)
-        total_grid_h = (grid_rows * (dot_radius * 2)) + ((grid_rows - 1) * DOT_SPACING)
-        
-        start_x = (IMAGE_WIDTH - total_grid_w) // 2
-        
-        if mode_param == 'year':
-            start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2) + 150 
+        # Layout Config
+        if is_desktop:
+            COLS, ROWS = 6, 2
+            START_Y = 250
+            GAP_X = 100
         else:
-            start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2)
+            COLS, ROWS = 3, 4
+            START_Y = 750
+            GAP_X = 150
+            
+        MINI_GRID_COLS = 7
+        DOT_R = 12
+        DOT_P = 10
         
-        if start_y < 200: start_y = 200
+        BLOCK_W = (DOT_R * 2 * MINI_GRID_COLS) + (DOT_P * (MINI_GRID_COLS - 1))
+        CONTENT_W = (COLS * BLOCK_W) + ((COLS - 1) * GAP_X)
+        START_X = (IMG_W - CONTENT_W) // 2
+        ROW_H = 340 if not is_desktop else 320
 
-        current_iter_date = start_date
-        
-        for row in range(grid_rows):
-            for col in range(grid_cols):
-                if current_iter_date > end_date: break
+        month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
+        for m in range(1, 13):
+            idx = m - 1
+            r_idx = idx // COLS
+            c_idx = idx % COLS
+            
+            m_x = START_X + c_idx * (BLOCK_W + GAP_X)
+            m_y = START_Y + r_idx * ROW_H
+
+            draw.text((m_x, m_y - 40), month_names[idx], font=font_small, fill=palette['INACTIVE'])
+            
+            days_in_m = calendar.monthrange(current_year, m)[1]
+            for d in range(1, days_in_m + 1):
+                curr_date = datetime.date(current_year, m, d)
+                col = palette['INACTIVE']
                 
-                # Color Logic
-                draw_color = palette['INACTIVE']
-                if highlight_weekends_param and current_iter_date.weekday() >= 5:
-                    draw_color = palette['WEEKEND']
+                # Weekend Highlight
+                if highlight_weekends and curr_date.weekday() >= 5: col = palette['WEEKEND']
                 
-                draw_emoji_img = None
-                if current_iter_date in special_dates:
-                    emoji_char = special_dates[current_iter_date]
-                    if emoji_char:
-                        draw_emoji_img = get_emoji_image(emoji_char)
-                        if not draw_emoji_img: draw_color = palette['SPECIAL']
-                    else:
-                        draw_color = palette['SPECIAL']
-                elif current_iter_date == now.date():
-                    draw_color = palette['ACTIVE']
-                elif current_iter_date < now.date():
-                    draw_color = palette['PASSED']
+                emoji_img = None
+                if curr_date in special_dates:
+                    if special_dates[curr_date]: emoji_img = get_emoji_image(special_dates[curr_date])
+                    if not emoji_img: col = palette['SPECIAL']
+                elif curr_date == now.date(): col = palette['ACTIVE']
+                elif curr_date < now.date(): col = palette['PASSED']
 
-                x = int(start_x + col * (dot_radius * 2 + DOT_SPACING))
-                y = int(start_y + row * (dot_radius * 2 + DOT_SPACING))
+                dot_idx = d - 1
+                dot_r = dot_idx // MINI_GRID_COLS
+                dot_c = dot_idx % MINI_GRID_COLS
+                
+                x = m_x + dot_c * (DOT_R*2 + DOT_P)
+                y = m_y + dot_r * (DOT_R*2 + DOT_P)
 
-                if draw_emoji_img:
-                    target_size = (dot_radius * 2, dot_radius * 2)
-                    emoji_resized = draw_emoji_img.resize(target_size, Image.Resampling.LANCZOS)
-                    img.paste(emoji_resized, (x, y), emoji_resized)
+                if emoji_img:
+                    e_rz = emoji_img.resize((DOT_R*2, DOT_R*2), Image.Resampling.LANCZOS)
+                    img.paste(e_rz, (int(x), int(y)), e_rz)
                 else:
-                    draw.ellipse((x, y, x + dot_radius * 2, y + dot_radius * 2), fill=draw_color)
-                
-                current_iter_date += datetime.timedelta(days=1)
+                    draw.ellipse((x, y, x + DOT_R*2, y + DOT_R*2), fill=col)
         
-        grid_bottom_y = start_y + total_grid_h
+        grid_bottom_y = START_Y + (ROWS * ROW_H) + (50 if is_desktop else 220)
 
-    # --- Draw Bottom Info (Common) ---
-    # Recalculate range text for specific modes if needed, but 'year' is default fallback
-    range_text_final = "year"
-    if mode_param == 'month': range_text_final = now.strftime("%b")
-    elif mode_param == 'quarter': range_text_final = f"Q{(now.month-1)//3 + 1}"
-    elif mode_param == 'fortnight': range_text_final = "period"
-    
-    # Use global stats for Year modes
-    if mode_param in ['year', 'segregated_months']:
-        bottom_text = f"{days_left}d left in year"
-        progress_ratio = days_passed_global / total_days_global if total_days_global > 0 else 0
     else:
-        # Use local stats calculated in the else block above? 
-        # Actually easier to re-calc local range here if needed or just use passed vars
-        # For simplicity, let's just re-calc local days for progress bar
+        # --- Mode: Year/Quarter/Month (Single Grid) ---
         if mode_param == 'month':
-            s = datetime.date(current_year, now.month, 1)
-            e = datetime.date(current_year, now.month, calendar.monthrange(current_year, now.month)[1])
+             # Logic same for both, centering handles it
+             s_d = datetime.date(current_year, now.month, 1)
+             e_d = datetime.date(current_year, now.month, calendar.monthrange(current_year, now.month)[1])
+             g_c, g_r = 7, 5
+             d_r, d_p = 35, 45
+             txt = now.strftime("%b")
         elif mode_param == 'quarter':
             q = (now.month - 1) // 3 + 1
-            s = datetime.date(current_year, (q-1)*3+1, 1)
-            e = datetime.date(current_year, (q-1)*3+3, calendar.monthrange(current_year, (q-1)*3+3)[1])
-        elif mode_param == 'fortnight':
-            s = now.date() - datetime.timedelta(days=now.weekday())
-            e = s + datetime.timedelta(days=13)
+            s_d = datetime.date(current_year, (q-1)*3+1, 1)
+            last = calendar.monthrange(current_year, (q-1)*3+3)[1]
+            e_d = datetime.date(current_year, (q-1)*3+3, last)
+            g_c, g_r = 10, 10
+            d_r, d_p = 25, 25
+            txt = f"Q{q}"
+        else: 
+            # YEAR MODE
+            s_d = start_date_global
+            e_d = end_date_global
+            txt = "year"
+            if is_desktop:
+                # Desktop Year Grid (Wider)
+                g_c, g_r = 32, 12
+                d_r, d_p = 15, 15 
+            else:
+                # Mobile Year Grid (Taller)
+                g_c, g_r = 15, 25
+                d_r, d_p = 18, 15
+
+        # Draw Grid
+        grid_w = (g_c * d_r*2) + ((g_c-1)*d_p)
+        grid_h = (g_r * d_r*2) + ((g_r-1)*d_p)
+        start_x = (IMG_W - grid_w) // 2
         
-        if mode_param not in ['year', 'segregated_months']:
-            t = (e - s).days + 1
-            p = (now.date() - s).days + 1
-            if p < 0: p = 0
-            if p > t: p = t
-            bottom_text = f"{t-p}d left in {range_text_final}"
-            progress_ratio = p / t if t > 0 else 0
+        if is_desktop:
+            start_y = (IMG_H - grid_h) // 2 - 50 # Slightly higher on desktop
+        else:
+            start_y = (IMG_H - grid_h) // 2 + 100
 
-    bbox_text = draw.textbbox((0, 0), bottom_text, font=font_small)
-    text_width = bbox_text[2] - bbox_text[0]
-    text_x = (IMAGE_WIDTH - text_width) / 2
-    text_y = grid_bottom_y + 80
-    draw.text((text_x, text_y), bottom_text, font=font_small, fill=palette['ACTIVE'])
+        curr = s_d
+        for r in range(g_r):
+            for c in range(g_c):
+                if curr > e_d: break
+                
+                col = palette['INACTIVE']
+                if highlight_weekends and curr.weekday() >= 5: col = palette['WEEKEND']
+                
+                emo = None
+                if curr in special_dates:
+                    if special_dates[curr]: emo = get_emoji_image(special_dates[curr])
+                    if not emo: col = palette['SPECIAL']
+                elif curr == now.date(): col = palette['ACTIVE']
+                elif curr < now.date(): col = palette['PASSED']
+                
+                x = int(start_x + c*(d_r*2 + d_p))
+                y = int(start_y + r*(d_r*2 + d_p))
+                
+                if emo:
+                    rz = emo.resize((d_r*2, d_r*2), Image.Resampling.LANCZOS)
+                    img.paste(rz, (x,y), rz)
+                else:
+                    draw.ellipse((x,y,x+d_r*2,y+d_r*2), fill=col)
+                curr += datetime.timedelta(days=1)
+        
+        grid_bottom_y = start_y + grid_h
 
-    # --- Draw Progress Bar ---
-    BAR_TOTAL_WIDTH = 600
-    bar_start_x = (IMAGE_WIDTH - BAR_TOTAL_WIDTH) / 2
-    bar_start_y = text_y + 60 
-
-    if bar_style_param == 'solid':
-        BAR_HEIGHT = 20
-        draw.rounded_rectangle((bar_start_x, bar_start_y, bar_start_x + BAR_TOTAL_WIDTH, bar_start_y + BAR_HEIGHT), radius=10, fill=palette['INACTIVE'])
-        fill_width = int(BAR_TOTAL_WIDTH * progress_ratio)
-        if fill_width > 0:
-            draw.rounded_rectangle((bar_start_x, bar_start_y, bar_start_x + fill_width, bar_start_y + BAR_HEIGHT), radius=10, fill=palette['ACTIVE'])
-    elif bar_style_param == 'minimal':
-        BAR_HEIGHT = 6
-        draw.rounded_rectangle((bar_start_x, bar_start_y, bar_start_x + BAR_TOTAL_WIDTH, bar_start_y + BAR_HEIGHT), radius=3, fill=palette['INACTIVE'])
-        fill_width = int(BAR_TOTAL_WIDTH * progress_ratio)
-        if fill_width > 0:
-            draw.rounded_rectangle((bar_start_x, bar_start_y, bar_start_x + fill_width, bar_start_y + BAR_HEIGHT), radius=3, fill=palette['ACTIVE'])
+    # --- Footer Info ---
+    # Progress Bar Text
+    if mode_param == 'year' or mode_param == 'segregated_months':
+        btm_txt = f"{days_left}d left in year"
+        ratio = days_passed / total_days_global
     else:
-        BAR_HEIGHT = 20
-        BAR_BLOCKS = 10
-        BLOCK_GAP = 12
-        single_block_width = (BAR_TOTAL_WIDTH - ((BAR_BLOCKS - 1) * BLOCK_GAP)) / BAR_BLOCKS
-        filled_blocks = int(progress_ratio * BAR_BLOCKS)
-        # Ensure at least one block is filled if any time passed
-        if progress_ratio > 0 and filled_blocks == 0: filled_blocks = 1
-        
-        for i in range(BAR_BLOCKS):
-            b_x1 = bar_start_x + i * (single_block_width + BLOCK_GAP)
-            b_y1 = bar_start_y
-            b_x2 = b_x1 + single_block_width
-            b_y2 = bar_start_y + BAR_HEIGHT
-            color = palette['ACTIVE'] if i < filled_blocks else palette['INACTIVE']
-            draw.rounded_rectangle((b_x1, b_y1, b_x2, b_y2), radius=8, fill=color)
+        # Simplified calc for other modes
+        t_d = (e_d - s_d).days + 1
+        p_d = max(0, min((now.date() - s_d).days + 1, t_d))
+        btm_txt = f"{t_d - p_d}d left in {txt}"
+        ratio = p_d / t_d
 
-    # --- Draw Signature ---
+    bbox = draw.textbbox((0,0), btm_txt, font=font_small)
+    tx_w = bbox[2]-bbox[0]
+    tx_x = (IMG_W - tx_w)/2
+    tx_y = grid_bottom_y + (60 if is_desktop else 80)
+    
+    draw.text((tx_x, tx_y), btm_txt, font=font_small, fill=palette['ACTIVE'])
+
+    # Bar
+    BAR_W = 800 if is_desktop else 600
+    b_x = (IMG_W - BAR_W)/2
+    b_y = tx_y + 60
+    BAR_H = 20
+    
+    # Simple Bar Logic (Segments hard to scale dynamically, using solid/minimal logic)
+    if bar_style_param == 'minimal':
+        draw.rounded_rectangle((b_x, b_y, b_x+BAR_W, b_y+6), radius=3, fill=palette['INACTIVE'])
+        if ratio > 0: draw.rounded_rectangle((b_x, b_y, b_x+(BAR_W*ratio), b_y+6), radius=3, fill=palette['ACTIVE'])
+    elif bar_style_param == 'solid':
+        draw.rounded_rectangle((b_x, b_y, b_x+BAR_W, b_y+20), radius=10, fill=palette['INACTIVE'])
+        if ratio > 0: draw.rounded_rectangle((b_x, b_y, b_x+(BAR_W*ratio), b_y+20), radius=10, fill=palette['ACTIVE'])
+    else: # Segmented
+         BLOCKS = 20 if is_desktop else 10
+         GAP = 10
+         s_w = (BAR_W - (BLOCKS-1)*GAP)/BLOCKS
+         filled = int(ratio * BLOCKS)
+         if ratio > 0 and filled == 0: filled = 1
+         for i in range(BLOCKS):
+             bx1 = b_x + i*(s_w+GAP)
+             c = palette['ACTIVE'] if i < filled else palette['INACTIVE']
+             draw.rounded_rectangle((bx1, b_y, bx1+s_w, b_y+20), radius=8, fill=c)
+
+    # Signature
     if signature_param:
-        bbox_sig = draw.textbbox((0, 0), signature_param, font=font_signature)
-        sig_width = bbox_sig[2] - bbox_sig[0]
-        sig_x = (IMAGE_WIDTH - sig_width) / 2
-        
-        # Calculate specific signature gap
-        sig_gap = 120
-        if mode_param == 'segregated_months':
-            sig_gap = 200 # Push it lower specifically for this mode
-            
-        sig_y = bar_start_y + BAR_HEIGHT + sig_gap
-        draw.text((sig_x, sig_y), signature_param, font=font_signature, fill=palette['TEXT'])
+        sb = draw.textbbox((0,0), signature_param, font=font_sig)
+        sw = sb[2]-sb[0]
+        sx = (IMG_W - sw)/2
+        sy = b_y + 40 + (50 if is_desktop else 100)
+        draw.text((sx, sy), signature_param, font=font_sig, fill=palette['TEXT'])
 
-    img_io = io.BytesIO()
-    img.save(img_io, 'PNG')
-    img_io.seek(0)
-    return send_file(img_io, mimetype='image/png')
+    out = io.BytesIO()
+    img.save(out, 'PNG')
+    out.seek(0)
+    return send_file(out, mimetype='image/png')
+
+if __name__ == '__main__':
+    app.run(debug=True)
