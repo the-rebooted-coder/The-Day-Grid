@@ -254,8 +254,11 @@ HTML_DASHBOARD = """
             margin: 20px auto;
             overflow: hidden;
             box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+            transition: all 0.3s ease;
         }
-        .dynamic-island {
+        
+        /* DYNAMIC ISLAND STYLE (Default) */
+        .iphone-mockup.dynamic-island .dynamic-island {
             width: 80px;
             height: 24px;
             background: #000;
@@ -266,6 +269,22 @@ HTML_DASHBOARD = """
             border-radius: 20px;
             z-index: 10;
         }
+
+        /* NOTCH STYLE */
+        .iphone-mockup.notch .dynamic-island {
+            width: 140px;
+            height: 28px;
+            background: #000;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
+            border-radius: 0 0 16px 16px; /* explicit standard */
+            z-index: 10;
+        }
+
         .mockup-img {
             width: 100%;
             height: 100%;
@@ -346,6 +365,14 @@ HTML_DASHBOARD = """
                 </label>
             </div>
 
+            <div class="toggle-container" style="margin-top: 10px;">
+                <span class="toggle-label">Preview Device</span>
+                <select id="device-select" onchange="updateMockupStyle()" style="width: auto; padding: 5px; flex-grow: 0;">
+                    <option value="dynamic-island">Modern (Dynamic Island)</option>
+                    <option value="notch">Classic (Notch)</option>
+                </select>
+            </div>
+
             <h2>Progress Bar Style</h2>
             <div style="margin-bottom: 20px;">
                 <select id="bar-style" style="width: 100%">
@@ -392,7 +419,7 @@ HTML_DASHBOARD = """
                 </div>
             </div>
 
-            <div class="iphone-mockup">
+            <div id="phone-frame" class="iphone-mockup dynamic-island">
                 <div class="dynamic-island"></div>
                 <img id="mockup-img" class="mockup-img" src="" alt="Preview">
             </div>
@@ -409,7 +436,7 @@ HTML_DASHBOARD = """
 
     <footer>
         &lt;/&gt; with ❤️ by Spandan.<br>
-        <span onclick="openReleaseModal()" class="footer-link">Version 3.0 Prod.</span>
+        <span onclick="openReleaseModal()" class="footer-link">Version 3.1 Prod.</span>
         <div class="labs-product">An S² Labs Product 🥼</div>
     </footer>
 
@@ -440,8 +467,9 @@ HTML_DASHBOARD = """
 
     <div class="modal-overlay" id="releaseModalOverlay" onclick="closeReleaseModal(event)">
         <div class="modal">
-            <h3>Version 3.0 Notes</h3>
+            <h3>Version 3.1 Notes</h3>
             <ul class="release-list">
+                <li><strong>Smart Device Detection:</strong> We now auto-detect if your iPhone uses a Notch or Dynamic Island for the preview.</li>
                 <li><strong>Remember Me:</strong> Your settings, dates, and signature now auto-save locally.</li>
                 <li><strong>Weekend Highlight:</strong> New toggle to visually dim Saturdays & Sundays.</li>
                 <li><strong>Live Mockup:</strong> Real-time iPhone 15 Pro preview directly on the dashboard.</li>
@@ -544,6 +572,40 @@ HTML_DASHBOARD = """
             }
         }
 
+        // --- DEVICE DETECTION LOGIC ---
+        function detectDeviceType() {
+            // Check logical screen width to guess device family
+            const width = window.screen.width;
+            const select = document.getElementById('device-select');
+            
+            let deviceType = 'dynamic-island'; // Default
+
+            // Heuristic based on logical width
+            // 393/430 = Dynamic Island (14 Pro, 15, 16)
+            // 390/428/375/414 = Notch (12, 13, 14, 11, X)
+            if (width === 393 || width === 430) {
+                deviceType = 'dynamic-island';
+            } else if (width === 390 || width === 428 || width === 375 || width === 414) {
+                deviceType = 'notch';
+            }
+
+            select.value = deviceType;
+            updateMockupStyle();
+        }
+
+        function updateMockupStyle() {
+            const type = document.getElementById('device-select').value;
+            const frame = document.getElementById('phone-frame');
+            
+            if (type === 'notch') {
+                frame.classList.remove('dynamic-island');
+                frame.classList.add('notch');
+            } else {
+                frame.classList.remove('notch');
+                frame.classList.add('dynamic-island');
+            }
+        }
+
         // --- TITLE ANIMATION ---
         let isAnimating = false;
 
@@ -597,10 +659,13 @@ HTML_DASHBOARD = """
         window.onload = function() {
             const isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
             
-            // Load Saved Data
+            // 1. Load Saved Data
             loadPreferences();
             
-            // Init Title Width
+            // 2. Detect Device Type
+            detectDeviceType();
+            
+            // 3. Init Title Width & Animation
             const el = document.getElementById('animated-title');
             const ruler = document.getElementById('ruler');
             ruler.innerText = "Grid.";
