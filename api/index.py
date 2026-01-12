@@ -303,7 +303,19 @@ HTML_DASHBOARD = """
         .labs-product { font-size: 10px; color: #555; margin-top: 8px; font-weight: 600; letter-spacing: 0.5px; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
-        .modal { background: #1c1c1e; border: 1px solid #333; padding: 25px; border-radius: 16px; width: 90%; max-width: 320px; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .modal { 
+            background: #1c1c1e; 
+            border: 1px solid #333; 
+            padding: 25px; 
+            border-radius: 16px; 
+            width: 90%; 
+            max-width: 320px; 
+            transform: scale(0.9); 
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
+            max-height: 80vh; /* Limits height to 80% of screen */
+            overflow-y: auto; /* Adds scrollbar if content exceeds height */
+        }
         .modal h3 { margin-top: 0; color: white; text-align: center; }
         
         .color-legend { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
