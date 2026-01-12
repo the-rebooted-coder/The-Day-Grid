@@ -10,13 +10,12 @@ import json
 app = Flask(__name__)
 
 # --- Configuration & Themes ---
-# Dimensions are dynamic based on request
-MOBILE_WIDTH = 1170
-MOBILE_HEIGHT = 2532
-DESKTOP_WIDTH = 2560
-DESKTOP_HEIGHT = 1440
+IMAGE_WIDTH = 1170
+IMAGE_HEIGHT = 2532
 
-# Default Settings
+# Default (Year) Grid Settings
+GRID_COLS = 15
+GRID_ROWS = 25
 DOT_RADIUS = 18
 DOT_PADDING = 15
 
@@ -79,7 +78,7 @@ HTML_DASHBOARD = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Grid Generator</title>
-    <meta name="description" content="Visualize your year. A minimal wallpaper generator for iOS and Desktop.">
+    <meta name="description" content="Visualize your year. A minimal wallpaper generator for iOS.">
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://the-day-grid.vercel.app/">
@@ -116,6 +115,7 @@ HTML_DASHBOARD = """
         .header-section { margin-bottom: 30px; text-align: center; width: 100%; }
         h1 { font-weight: 900; letter-spacing: -1px; margin: 0 0 5px 0; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
         
+        /* Title Animation CSS */
         #animated-title {
             transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.2s ease-in-out;
             opacity: 1;
@@ -139,7 +139,13 @@ HTML_DASHBOARD = """
             pointer-events: none;
         }
 
-        .title-dot { width: 28px; height: 28px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
+        .title-dot {
+            width: 28px; 
+            height: 28px;
+            border-radius: 50%;
+            display: inline-block;
+            flex-shrink: 0;
+        }
         
         .subtitle-container { display: flex; align-items: center; justify-content: center; gap: 8px; }
         p.subtitle { color: #888; text-align: center; line-height: 1.5; font-size: 0.95rem; margin: 0; }
@@ -175,12 +181,34 @@ HTML_DASHBOARD = """
         .month-select { flex: 2; }
         .day-select { flex: 1; }
 
-        .emoji-select { flex-grow: 0 !important; width: 60px !important; font-size: 18px !important; appearance: none; -webkit-appearance: none; cursor: pointer; padding: 10px 0; text-align: center; text-align-last: center; -moz-text-align-last: center; }
+        .emoji-select { 
+            flex-grow: 0 !important; 
+            width: 60px !important; 
+            font-size: 18px !important; 
+            appearance: none; 
+            -webkit-appearance: none; 
+            cursor: pointer; 
+            padding: 10px 0; 
+            text-align: center;
+            text-align-last: center; 
+            -moz-text-align-last: center;
+        }
 
         input[type="text"] { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; width: 100%; box-sizing: border-box; }
         
-        #signature { font-family: 'SignatureFont', cursive; font-size: 28px; padding: 12px 10px; letter-spacing: 1px; }
-        #signature::placeholder { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 14px; letter-spacing: normal; opacity: 0.5; padding-top: 5px; }
+        #signature {
+            font-family: 'SignatureFont', cursive;
+            font-size: 28px;
+            padding: 12px 10px;
+            letter-spacing: 1px;
+        }
+        #signature::placeholder {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 14px;
+            letter-spacing: normal;
+            opacity: 0.5;
+            padding-top: 5px;
+        }
 
         /* Toggle Switch CSS */
         .toggle-container { display: flex; align-items: center; justify-content: space-between; background: #2c2c2e; padding: 12px; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px; }
@@ -215,25 +243,22 @@ HTML_DASHBOARD = """
         .url-box { background: #000; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #ff693c; border: 1px solid #333; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .copy-btn { background: #333; border: 1px solid #444; border-radius: 8px; cursor: pointer; color: white; padding: 0 15px; font-weight: bold; transition: background 0.2s; }
         
-        /* PREVIEW FRAME CSS */
-        .preview-frame {
+        /* IPHONE MOCKUP CSS */
+        .iphone-mockup {
+            width: 280px;
+            aspect-ratio: 9 / 19.5;
             background: #000;
+            border-radius: 40px;
+            border: 8px solid #2b2b2b;
+            position: relative;
             margin: 20px auto;
             overflow: hidden;
             box-shadow: 0 20px 40px rgba(0,0,0,0.6);
             transition: all 0.3s ease;
-            position: relative;
-        }
-
-        /* IPHONE STYLE */
-        .preview-frame.mobile {
-            width: 280px;
-            aspect-ratio: 9 / 19.5;
-            border-radius: 40px;
-            border: 8px solid #2b2b2b;
         }
         
-        .preview-frame.mobile.dynamic-island .dynamic-island {
+        /* DYNAMIC ISLAND STYLE (Default) */
+        .iphone-mockup.dynamic-island .dynamic-island {
             width: 80px;
             height: 24px;
             background: #000;
@@ -243,10 +268,10 @@ HTML_DASHBOARD = """
             transform: translateX(-50%);
             border-radius: 20px;
             z-index: 10;
-            display: block;
         }
 
-        .preview-frame.mobile.notch .dynamic-island {
+        /* NOTCH STYLE */
+        .iphone-mockup.notch .dynamic-island {
             width: 140px;
             height: 28px;
             background: #000;
@@ -256,23 +281,16 @@ HTML_DASHBOARD = """
             transform: translateX(-50%);
             border-bottom-left-radius: 16px;
             border-bottom-right-radius: 16px;
-            border-radius: 0 0 16px 16px;
+            border-radius: 0 0 16px 16px; /* explicit standard */
             z-index: 10;
+        }
+
+        .mockup-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             display: block;
         }
-
-        /* DESKTOP STYLE */
-        .preview-frame.desktop {
-            width: 300px;
-            aspect-ratio: 16 / 9;
-            border-radius: 8px;
-            border: 8px solid #2b2b2b;
-            border-bottom-width: 12px; /* Thicker chin for monitor */
-        }
-        
-        .preview-frame.desktop .dynamic-island { display: none; }
-
-        .mockup-img { width: 100%; height: 100%; object-fit: cover; display: block; }
 
         .shortcut-section { margin-top: 20px; background: #2c2c2e; padding: 15px; border-radius: 12px; border: 1px solid #444; }
         .shortcut-btn { background: white; color: black; display: block; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 10px; box-sizing: border-box; }
@@ -285,7 +303,20 @@ HTML_DASHBOARD = """
         .labs-product { font-size: 10px; color: #555; margin-top: 8px; font-weight: 600; letter-spacing: 0.5px; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
-        .modal { background: #1c1c1e; border: 1px solid #333; padding: 25px; border-radius: 16px; width: 90%; max-width: 320px; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 50px rgba(0,0,0,0.5); max-height: 70vh; overflow-y: auto; }
+        .modal { 
+            background: #1c1c1e; 
+            border: 1px solid #333; 
+            padding: 25px; 
+            border-radius: 16px; 
+            width: 90%; 
+            max-width: 320px; 
+            transform: scale(0.9); 
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
+            max-height: 70vh; /* Reduced from 80vh for safe top margin */
+            overflow-y: auto; 
+        }
+        
         .modal h3 { margin-top: 0; color: white; text-align: center; }
         
         .color-legend { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
@@ -328,14 +359,6 @@ HTML_DASHBOARD = """
         </div>
 
         <div id="custom-section">
-            <h2>Device Size</h2>
-            <div style="margin-bottom: 20px;">
-                <select id="device-size" style="width: 100%" onchange="updateDevicePreview()">
-                    <option value="mobile">Mobile (Portrait)</option>
-                    <option value="desktop">Desktop / Monitor (Landscape)</option>
-                </select>
-            </div>
-
             <h2>View Mode</h2>
             <div style="margin-bottom: 20px;">
                 <select id="view-mode" style="width: 100%">
@@ -402,7 +425,7 @@ HTML_DASHBOARD = """
                 </div>
             </div>
 
-            <div id="phone-frame" class="preview-frame mobile dynamic-island">
+            <div id="phone-frame" class="iphone-mockup dynamic-island">
                 <div class="dynamic-island"></div>
                 <img id="mockup-img" class="mockup-img" src="" alt="Preview">
             </div>
@@ -410,7 +433,7 @@ HTML_DASHBOARD = """
             <div class="shortcut-section">
                 <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: #ccc;">Step 2: Install the Shortcut.</p>
                 <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: #888; line-height: 1.4;">
-                    For Mobile: Use Shortcuts app. <br>For Desktop: Use a script to fetch this URL daily.
+                    Since you probably need hand-holding: <strong>First add the shortcut, then click on the three dots (...) to edit it.</strong> Paste the URL where indicated. Don't mess it up.
                 </p>
                 <a href="https://www.icloud.com/shortcuts/99a190f4001844f9ade585fc8eafd47e" class="shortcut-btn" target="_blank">Install iOS Shortcut</a>
             </div>
@@ -419,7 +442,7 @@ HTML_DASHBOARD = """
 
     <footer>
         &lt;/&gt; with ❤️ by Spandan.<br>
-        <span onclick="openReleaseModal()" class="footer-link">Version 3.2 Prod.</span>
+        <span onclick="openReleaseModal()" class="footer-link">Version 3.1 Prod.</span>
         <div class="labs-product">An S² Labs Product 🥼</div>
     </footer>
 
@@ -450,14 +473,14 @@ HTML_DASHBOARD = """
 
     <div class="modal-overlay" id="releaseModalOverlay" onclick="closeReleaseModal(event)">
         <div class="modal">
-            <h3>Version 3.2 Notes</h3>
+            <h3>Version 3.1 Notes</h3>
             <ul class="release-list">
-                <li><strong>Desktop Support:</strong> You can now generate 1440p landscape grids for your monitor. Because anxiety should follow you to work, too.</li>
                 <li><strong>Emoji Chooser:</strong> Because a colored dot wasn't "aesthetic" enough for your Instagram story. Send your "thanks" to <a href="https://www.instagram.com/im.amitpatwa" target="_blank" style="color: #ff693c; text-decoration: none;">Amit</a> for the extra bloat.</li>
                 <li><strong>We Killed the 'Year' Input:</strong> It's an annual calendar, Einstein. Stop trying to schedule things for 2027.</li>
                 <li><strong>Goldfish Memory Patch:</strong> The app now remembers your settings and dates locally. Because apparently, typing your own name more than once is too much to ask of you.</li>
                 <li><strong>Live Signature:</strong> Type your name. See it appear. It's not magic, it's JavaScript. Try not to be impressed.</li>
                 <li><strong>Weekend Highlight:</strong> Visual proof that you only live for 28% of your life.</li>
+                <li><strong>Smart Device Detection:</strong> We know what iPhone you have. If you have a Notch, we judge you. If you have an Island, we judge you harder.</li>
                 <li><strong>Segregated Months:</strong> A new view for those easily overwhelmed by 365 dots. Deep breaths.</li>
                 <li><strong>Layout Fixes:</strong> Fixed the Full Year view alignment. It used to look terrible. Now it looks slightly less terrible. Thanks to <a href="https://www.linkedin.com/in/kartikeya-srivastava-b527901a4/?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app" target="_blank" style="color: #ff693c; text-decoration: none;">Kartikey</a> for pointing out the UI inconsistency we were praying you wouldn't notice.</li>
             </ul>
@@ -502,7 +525,6 @@ HTML_DASHBOARD = """
         // --- LOCAL STORAGE LOGIC ---
         function savePreferences() {
             const prefs = {
-                deviceSize: document.getElementById('device-size').value,
                 viewMode: document.getElementById('view-mode').value,
                 barStyle: document.getElementById('bar-style').value,
                 highlightWeekends: document.getElementById('weekend-toggle').checked,
@@ -536,9 +558,6 @@ HTML_DASHBOARD = """
                 const prefs = JSON.parse(stored);
                 
                 // Set Fields
-                // Note: We deliberately skip setting 'deviceSize' from local storage on load
-                // to allow the auto-detector to run fresh for the current device.
-                
                 if(prefs.viewMode) document.getElementById('view-mode').value = prefs.viewMode;
                 if(prefs.barStyle) document.getElementById('bar-style').value = prefs.barStyle;
                 if(prefs.highlightWeekends !== undefined) document.getElementById('weekend-toggle').checked = prefs.highlightWeekends;
@@ -566,44 +585,26 @@ HTML_DASHBOARD = """
         // --- DEVICE DETECTION LOGIC ---
         function detectDeviceType() {
             // Check logical screen width to guess device family
-            const width = window.innerWidth;
+            const width = window.screen.width;
             const frame = document.getElementById('phone-frame');
-            const select = document.getElementById('device-size');
             
-            // If the screen is wider than a typical tablet/mobile (1000px breakpoint)
-            if (width > 1000) {
-                // It's a Desktop/Laptop
-                select.value = 'desktop';
-                updateDevicePreview();
-            } else {
-                // It's Mobile
-                select.value = 'mobile';
-                updateDevicePreview();
-                
-                // Fine-tune mobile frame style (Notch vs Island)
-                // Heuristic based on logical width
-                if (width === 393 || width === 430) {
-                    frame.classList.add('dynamic-island');
-                    frame.classList.remove('notch');
-                } else if (width === 390 || width === 428 || width === 375 || width === 414) {
-                    frame.classList.remove('dynamic-island');
-                    frame.classList.add('notch');
-                }
-            }
-        }
+            let deviceType = 'dynamic-island'; // Default
 
-        function updateDevicePreview() {
-            const size = document.getElementById('device-size').value;
-            const frame = document.getElementById('phone-frame');
-            
-            if (size === 'desktop') {
-                frame.classList.remove('mobile', 'dynamic-island', 'notch');
-                frame.classList.add('desktop');
+            // Heuristic based on logical width
+            // 393/430 = Dynamic Island (14 Pro, 15, 16)
+            // 390/428/375/414 = Notch (12, 13, 14, 11, X)
+            if (width === 393 || width === 430) {
+                deviceType = 'dynamic-island';
+            } else if (width === 390 || width === 428 || width === 375 || width === 414) {
+                deviceType = 'notch';
+            }
+
+            // Apply directly
+            if (deviceType === 'notch') {
+                frame.classList.remove('dynamic-island');
+                frame.classList.add('notch');
             } else {
-                frame.classList.remove('desktop');
-                frame.classList.add('mobile');
-                // Re-apply detection logic for notch/island if switching back to mobile manually
-                // For simplicity in manual switch, default to DI
+                frame.classList.remove('notch');
                 frame.classList.add('dynamic-island');
             }
         }
@@ -659,10 +660,12 @@ HTML_DASHBOARD = """
         function replayAnimation() { animateTitle(); }
 
         window.onload = function() {
-            // 1. Load Saved Data (skip device size to allow fresh detection)
+            const isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
+            
+            // 1. Load Saved Data
             loadPreferences();
             
-            // 2. Detect Current Device Type and override preview
+            // 2. Detect Device Type and set Preview
             detectDeviceType();
             
             // 3. Init Title Width & Animation
@@ -672,6 +675,16 @@ HTML_DASHBOARD = """
             el.style.width = ruler.offsetWidth + 'px';
             
             setTimeout(animateTitle, 2000);
+
+            if (!isApple) {
+                const btn = document.getElementById('default-btn');
+                btn.innerText = "Sorry, currently available only on iOS / iPadOS";
+                btn.disabled = true;
+                document.querySelector('.separator').style.display = 'none';
+                document.querySelector('.customise-trigger').style.display = 'none';
+                document.getElementById('custom-section').style.display = 'none';
+                document.querySelector('footer').style.marginTop = 'auto';
+            }
         };
 
         let selectedTheme = 'dark';
@@ -810,7 +823,6 @@ HTML_DASHBOARD = """
             });
 
             const sig = document.getElementById('signature').value.trim();
-            const deviceSize = document.getElementById('device-size').value;
             const mode = document.getElementById('view-mode').value;
             const barStyle = document.getElementById('bar-style').value;
             const highlightWeekends = document.getElementById('weekend-toggle').checked;
@@ -826,10 +838,9 @@ HTML_DASHBOARD = """
             if (mode !== 'year') params.append('mode', mode);
             if (barStyle !== 'segmented') params.append('bar_style', barStyle);
             if (highlightWeekends) params.append('highlight_weekends', 'true');
-            if (deviceSize === 'desktop') params.append('size', 'desktop');
             
             const fullUrl = baseUrl + "?" + params.toString();
-            const isDefault = dateEntries.length === 0 && selectedTheme === 'dark' && sig === '' && mode === 'year' && barStyle === 'segmented' && !highlightWeekends && deviceSize === 'mobile';
+            const isDefault = dateEntries.length === 0 && selectedTheme === 'dark' && sig === '' && mode === 'year' && barStyle === 'segmented' && !highlightWeekends;
 
             // Set Mockup Image
             document.getElementById('mockup-img').src = fullUrl;
