@@ -313,9 +313,10 @@ HTML_DASHBOARD = """
             transform: scale(0.9); 
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
-            max-height: 80vh; /* Limits height to 80% of screen */
-            overflow-y: auto; /* Adds scrollbar if content exceeds height */
+            max-height: 70vh; /* Reduced from 80vh for safe top margin */
+            overflow-y: auto; 
         }
+        
         .modal h3 { margin-top: 0; color: white; text-align: center; }
         
         .color-legend { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
