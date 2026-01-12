@@ -114,16 +114,17 @@ HTML_DASHBOARD = """
         
         /* Title Animation CSS */
         #animated-title {
-            transition: opacity 0.4s ease-in-out;
+            transition: opacity 0.25s ease-in-out; /* Faster Fade */
             opacity: 1;
             display: inline-block;
+            cursor: pointer; /* Indicates clickability */
         }
         .title-dot {
-            width: 22px;
-            height: 22px;
+            width: 28px; /* Increased Size */
+            height: 28px;
             border-radius: 50%;
             display: inline-block;
-            margin-top: 4px; /* subtle visual alignment */
+            vertical-align: middle;
         }
         
         .subtitle-container { display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -160,18 +161,14 @@ HTML_DASHBOARD = """
         .month-select { flex: 2; }
         .day-select { flex: 1; }
 
-        /* --- THE FIX: text-align-last ensures iOS centers the text --- */
         .emoji-select { 
             flex-grow: 0 !important; 
             width: 60px !important; 
-            
             font-size: 18px !important; 
             appearance: none; 
             -webkit-appearance: none; 
             cursor: pointer; 
             padding: 10px 0; 
-            
-            /* Center Alignment Logic */
             text-align: center;
             text-align-last: center; 
             -moz-text-align-last: center;
@@ -179,20 +176,18 @@ HTML_DASHBOARD = """
 
         input[type="text"] { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; width: 100%; box-sizing: border-box; }
         
-        /* Signature Field Specific Styling */
         #signature {
             font-family: 'SignatureFont', cursive;
             font-size: 28px;
             padding: 12px 10px;
             letter-spacing: 1px;
         }
-        /* Keep placeholder text readable in normal font */
         #signature::placeholder {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             font-size: 14px;
             letter-spacing: normal;
             opacity: 0.5;
-            padding-top: 5px; /* Alignment fix */
+            padding-top: 5px;
         }
 
         .btn-icon { background: #333; border: 1px solid #444; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 18px; flex-shrink: 0; }
@@ -245,7 +240,7 @@ HTML_DASHBOARD = """
 </head>
 <body>
     <div class="header-section">
-        <h1>The <span id="animated-title">Grid.</span></h1>
+        <h1>The <span id="animated-title" onclick="replayAnimation()">Grid.</span></h1>
         <div class="subtitle-container">
             <p class="subtitle">Visualize your year.</p>
             <button class="info-btn" onclick="openModal()" title="What do the colors mean?">i</button>
@@ -391,16 +386,21 @@ HTML_DASHBOARD = """
         }
 
         // --- TITLE ANIMATION ---
+        let isAnimating = false;
+
         function animateTitle() {
+            if (isAnimating) return;
+            isAnimating = true;
+
             const el = document.getElementById('animated-title');
             
-            // Sequence: Text -> Fade Out -> White -> Fade Out -> Orange -> Fade Out -> Gray -> Fade Out -> Text
-            // Delays in ms
+            // Sequence: White -> Orange -> Gray -> Text (Stops)
+            // Faster Timings: 700ms pause, 250ms fade
             const seq = [
-                { type: 'html', content: '<span class="dot white title-dot"></span>', time: 1000 },
-                { type: 'html', content: '<span class="dot orange title-dot"></span>', time: 1000 },
-                { type: 'html', content: '<span class="dot gray title-dot"></span>', time: 1000 },
-                { type: 'text', content: 'Grid.', time: 4000 }
+                { type: 'html', content: '<span class="dot white title-dot"></span>', time: 700 },
+                { type: 'html', content: '<span class="dot orange title-dot"></span>', time: 700 },
+                { type: 'html', content: '<span class="dot gray title-dot"></span>', time: 700 },
+                { type: 'text', content: 'Grid.', time: 0 } // Stop
             ];
             
             let i = 0;
@@ -418,17 +418,25 @@ HTML_DASHBOARD = """
                     // 3. Fade In
                     el.style.opacity = 1;
                     
-                    // 4. Wait & Next Step
-                    setTimeout(() => {
-                        i = (i + 1) % seq.length;
-                        step();
-                    }, item.time);
+                    // 4. Next Step
+                    i++;
+                    if (i < seq.length) {
+                        setTimeout(step, item.time);
+                    } else {
+                        // Done
+                        isAnimating = false;
+                    }
                     
-                }, 400); // 400ms fade transition
+                }, 250); // 250ms fade
             }
             
-            // Start after initial delay
-            setTimeout(step, 2000);
+            // Start the sequence
+            step();
+        }
+        
+        // Wrapper to trigger animation logic (only logic, not click event)
+        function replayAnimation() {
+            animateTitle();
         }
 
         window.onload = function() {
@@ -437,8 +445,8 @@ HTML_DASHBOARD = """
             // Initial Date Row
             addDate();
             
-            // Start Animation
-            animateTitle();
+            // Start Animation automatically after slight delay
+            setTimeout(animateTitle, 2000);
 
             if (!isApple) {
                 const btn = document.getElementById('default-btn');
