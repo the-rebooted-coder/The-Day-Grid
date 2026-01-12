@@ -1,4 +1,4 @@
-from flask import Flask, send_file, request
+from flask import Flask, send_file, request, send_from_directory
 import datetime
 import calendar
 from PIL import Image, ImageDraw, ImageFont
@@ -89,6 +89,12 @@ HTML_DASHBOARD = """
     <script defer src="/_vercel/insights/script.js"></script>
 
     <style>
+        /* Load Custom Font for Live Preview */
+        @font-face {
+            font-family: 'SignatureFont';
+            src: url('/fonts/Buffalo.otf');
+        }
+
         body { 
             background: #1c1c1e; 
             color: white; 
@@ -133,28 +139,31 @@ HTML_DASHBOARD = """
         #date-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
         .date-row { display: flex; gap: 8px; align-items: center; }
         
-        /* New Date Select Styles */
         .date-picker-group { display: flex; flex-grow: 1; gap: 5px; }
-        
         select { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; color-scheme: dark; box-sizing: border-box; }
         select:focus, input[type="text"]:focus { border-color: #ff693c; }
-
-        /* Month takes more space, Day takes less */
         .month-select { flex: 2; }
         .day-select { flex: 1; }
 
-        .emoji-select {
-            flex-grow: 0 !important;
-            width: 60px !important;
-            text-align: center;
-            font-size: 18px !important;
-            appearance: none;
-            -webkit-appearance: none;
-            cursor: pointer;
-            padding: 10px 0;
-        }
+        .emoji-select { flex-grow: 0 !important; width: 60px !important; text-align: center; font-size: 18px !important; appearance: none; -webkit-appearance: none; cursor: pointer; padding: 10px 0; }
 
         input[type="text"] { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; width: 100%; box-sizing: border-box; }
+        
+        /* Signature Field Specific Styling */
+        #signature {
+            font-family: 'SignatureFont', cursive;
+            font-size: 28px;
+            padding: 12px 10px;
+            letter-spacing: 1px;
+        }
+        /* Keep placeholder text readable in normal font */
+        #signature::placeholder {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            font-size: 14px;
+            letter-spacing: normal;
+            opacity: 0.5;
+            padding-top: 5px; /* Alignment fix */
+        }
 
         .btn-icon { background: #333; border: 1px solid #444; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 18px; flex-shrink: 0; }
         .btn-icon:hover { background: #444; }
@@ -292,7 +301,7 @@ HTML_DASHBOARD = """
 
     <footer>
         &lt;/&gt; with ❤️ by Spandan.<br>
-        <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="footer-link" style="font-size: 11px; margin-top: 5px; display: inline-block;">Version 1.0 Prod.</a>
+        <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="footer-link" style="font-size: 11px; margin-top: 5px; display: inline-block;">Version 2.0 Prod.</a>
     </footer>
 
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
@@ -469,8 +478,6 @@ HTML_DASHBOARD = """
                 const emoji = row.querySelector('.emoji-select').value;
                 
                 if (month && day) {
-                    // Format needs to be MM-DD
-                    // Pad with zero if needed (though values in html should handle it, explicit safety)
                     const mStr = month.toString().padStart(2, '0');
                     const dStr = day.toString().padStart(2, '0');
                     
@@ -537,6 +544,11 @@ HTML_DASHBOARD = """
 @app.route('/')
 def home():
     return HTML_DASHBOARD
+
+# --- NEW: SERVE FONTS TO FRONTEND ---
+@app.route('/fonts/<path:filename>')
+def serve_fonts(filename):
+    return send_from_directory(FONT_DIR, filename)
 
 @app.route('/api/image')
 def generate_grid():
