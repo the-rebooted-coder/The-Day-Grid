@@ -110,7 +110,22 @@ HTML_DASHBOARD = """
         }
 
         .header-section { margin-bottom: 30px; text-align: center; width: 100%; }
-        h1 { font-weight: 900; letter-spacing: -1px; margin: 0 0 5px 0; font-size: 2.5rem; }
+        h1 { font-weight: 900; letter-spacing: -1px; margin: 0 0 5px 0; font-size: 2.5rem; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        
+        /* Title Animation CSS */
+        #animated-title {
+            transition: opacity 0.4s ease-in-out;
+            opacity: 1;
+            display: inline-block;
+        }
+        .title-dot {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-top: 4px; /* subtle visual alignment */
+        }
+        
         .subtitle-container { display: flex; align-items: center; justify-content: center; gap: 8px; }
         p.subtitle { color: #888; text-align: center; line-height: 1.5; font-size: 0.95rem; margin: 0; }
         
@@ -210,6 +225,7 @@ HTML_DASHBOARD = """
         footer { margin-top: auto; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; padding-bottom: 10px; width: 100%; text-align: center; }
         .footer-link { color: #555; text-decoration: none; border-bottom: 1px dotted #555; transition: color 0.2s; }
         .footer-link:hover { color: #ff693c; border-color: #ff693c; }
+        .labs-product { font-size: 10px; color: #555; margin-top: 8px; font-weight: 600; letter-spacing: 0.5px; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
         .modal { background: #1c1c1e; border: 1px solid #333; padding: 25px; border-radius: 16px; width: 90%; max-width: 320px; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
@@ -229,7 +245,7 @@ HTML_DASHBOARD = """
 </head>
 <body>
     <div class="header-section">
-        <h1>The Grid.</h1>
+        <h1>The <span id="animated-title">Grid.</span></h1>
         <div class="subtitle-container">
             <p class="subtitle">Visualize your year.</p>
             <button class="info-btn" onclick="openModal()" title="What do the colors mean?">i</button>
@@ -317,6 +333,7 @@ HTML_DASHBOARD = """
     <footer>
         &lt;/&gt; with ❤️ by Spandan.<br>
         <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="footer-link" style="font-size: 11px; margin-top: 5px; display: inline-block;">Version 2.0 Prod.</a>
+        <div class="labs-product">An S² Labs Product 🥼</div>
     </footer>
 
     <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
@@ -373,11 +390,55 @@ HTML_DASHBOARD = """
             return html;
         }
 
+        // --- TITLE ANIMATION ---
+        function animateTitle() {
+            const el = document.getElementById('animated-title');
+            
+            // Sequence: Text -> Fade Out -> White -> Fade Out -> Orange -> Fade Out -> Gray -> Fade Out -> Text
+            // Delays in ms
+            const seq = [
+                { type: 'html', content: '<span class="dot white title-dot"></span>', time: 1000 },
+                { type: 'html', content: '<span class="dot orange title-dot"></span>', time: 1000 },
+                { type: 'html', content: '<span class="dot gray title-dot"></span>', time: 1000 },
+                { type: 'text', content: 'Grid.', time: 4000 }
+            ];
+            
+            let i = 0;
+            
+            function step() {
+                // 1. Fade Out
+                el.style.opacity = 0;
+                
+                setTimeout(() => {
+                    // 2. Change Content
+                    const item = seq[i];
+                    if (item.type === 'text') el.innerText = item.content;
+                    else el.innerHTML = item.content;
+                    
+                    // 3. Fade In
+                    el.style.opacity = 1;
+                    
+                    // 4. Wait & Next Step
+                    setTimeout(() => {
+                        i = (i + 1) % seq.length;
+                        step();
+                    }, item.time);
+                    
+                }, 400); // 400ms fade transition
+            }
+            
+            // Start after initial delay
+            setTimeout(step, 2000);
+        }
+
         window.onload = function() {
             const isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
             
             // Initial Date Row
             addDate();
+            
+            // Start Animation
+            animateTitle();
 
             if (!isApple) {
                 const btn = document.getElementById('default-btn');
