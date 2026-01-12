@@ -669,7 +669,7 @@ def generate_grid():
         bbox_sig = draw.textbbox((0, 0), signature_param, font=font_signature)
         sig_width = bbox_sig[2] - bbox_sig[0]
         sig_x = (IMAGE_WIDTH - sig_width) / 2
-        sig_y = bar_start_y + BAR_HEIGHT + 80 
+        sig_y = bar_start_y + BAR_HEIGHT + 120 
         draw.text((sig_x, sig_y), signature_param, font=font_signature, fill=palette['TEXT'])
 
     # 6. Return Image
