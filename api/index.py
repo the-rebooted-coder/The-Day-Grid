@@ -53,7 +53,7 @@ def get_emoji_image(emoji_char):
         return emoji_cache[emoji_char]
     
     try:
-        # Get hex codepoint (e.g. 🎂 -> 1f382)
+        # Get hex codepoint (e.g. 🍰 -> 1f382)
         # We strip variant selectors to match Twemoji filenames
         codepoint = "-".join([f"{ord(c):x}" for c in emoji_char if ord(c) != 0xfe0f])
         
@@ -240,7 +240,7 @@ HTML_DASHBOARD = """
                     <input type="date" class="date-input">
                     <select class="emoji-select">
                         <option value="">🟡</option>
-                        <option value="🎂">🎂</option>
+                        <option value="🍰">🍰</option>
                         <option value="❤️">❤️</option>
                         <option value="🚀">🚀</option>
                         <option value="💰">💰</option>
@@ -381,7 +381,7 @@ HTML_DASHBOARD = """
                 <input type="date" class="date-input">
                 <select class="emoji-select">
                     <option value="">🟡</option>
-                    <option value="🎂">🎂</option>
+                    <option value="🍰">🍰</option>
                     <option value="❤️">❤️</option>
                     <option value="🚀">🚀</option>
                     <option value="💰">💰</option>
