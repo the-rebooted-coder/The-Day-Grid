@@ -350,6 +350,7 @@ HTML_DASHBOARD = """
             <div style="margin-bottom: 20px;">
                 <select id="view-mode" style="width: 100%">
                     <option value="year">Full Year (Default)</option>
+                    <option value="year_calendar">Year Calendar (12 Months)</option>
                     <option value="quarter">Current Quarter</option>
                     <option value="month">Current Month</option>
                     <option value="fortnight">Fortnight (14 Days)</option>
@@ -886,45 +887,8 @@ def generate_grid():
     ist_offset = datetime.timedelta(hours=5, minutes=30)
     now = datetime.datetime.now(datetime.timezone.utc) + ist_offset
     current_year = now.year
-    
-    # 4. Determine Grid Dimensions & Range
-    grid_cols = GRID_COLS
-    grid_rows = GRID_ROWS
-    dot_radius = DOT_RADIUS
-    dot_spacing = DOT_PADDING
-    
-    if mode_param == 'month':
-        start_date = datetime.date(current_year, now.month, 1)
-        last_day = calendar.monthrange(current_year, now.month)[1]
-        end_date = datetime.date(current_year, now.month, last_day)
-        grid_cols, grid_rows = 7, 5
-        dot_radius, dot_spacing = 35, 45
-    elif mode_param == 'quarter':
-        q = (now.month - 1) // 3 + 1
-        start_month = (q - 1) * 3 + 1
-        end_month = start_month + 2
-        start_date = datetime.date(current_year, start_month, 1)
-        last_day_q = calendar.monthrange(current_year, end_month)[1]
-        end_date = datetime.date(current_year, end_month, last_day_q)
-        grid_cols, grid_rows = 10, 10
-        dot_radius, dot_spacing = 25, 25
-    elif mode_param == 'fortnight':
-        start_date = now.date() - datetime.timedelta(days=now.weekday())
-        end_date = start_date + datetime.timedelta(days=13)
-        grid_cols, grid_rows = 7, 2
-        dot_radius, dot_spacing = 45, 50
-    else: # Year
-        start_date = datetime.date(current_year, 1, 1)
-        end_date = datetime.date(current_year, 12, 31)
-    
-    total_days = (end_date - start_date).days + 1
-    days_passed = (now.date() - start_date).days + 1
-    if days_passed < 0: days_passed = 0
-    if days_passed > total_days: days_passed = total_days
-    
-    days_left = total_days - days_passed
 
-    # 5. Parse Special Dates & Emojis
+    # 4. Parse Special Dates & Emojis early
     special_dates = {}
     if dates_param:
         items = dates_param.split(',')
@@ -933,7 +897,6 @@ def generate_grid():
                 d_str, emoji = item.split('|', 1)
             else:
                 d_str, emoji = item, None
-            
             try:
                 parts = d_str.strip().split('-')
                 if len(parts) == 2:
@@ -944,7 +907,7 @@ def generate_grid():
                     except ValueError: pass
             except ValueError: pass
 
-    # 6. Generate Image
+    # 5. Determine Grid Dimensions & Range (Shared)
     img = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT), color=palette['BG'])
     draw = ImageDraw.Draw(img)
     
@@ -959,88 +922,239 @@ def generate_grid():
     except:
         font_signature = font_small
 
-    # --- Draw Grid ---
-    DOT_SPACING = dot_spacing
-    total_grid_w = (grid_cols * (dot_radius * 2)) + ((grid_cols - 1) * DOT_SPACING)
-    total_grid_h = (grid_rows * (dot_radius * 2)) + ((grid_rows - 1) * DOT_SPACING)
-    
-    start_x = (IMAGE_WIDTH - total_grid_w) // 2
-    
-    if mode_param == 'year':
-        start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2) + 150 
-    else:
-        start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2)
-    
-    if start_y < 200: start_y = 200
+    # Calculate global days left (common for all modes)
+    start_date_global = datetime.date(current_year, 1, 1)
+    end_date_global = datetime.date(current_year, 12, 31)
+    total_days_global = (end_date_global - start_date_global).days + 1
+    days_passed_global = (now.date() - start_date_global).days + 1
+    if days_passed_global < 0: days_passed_global = 0
+    if days_passed_global > total_days_global: days_passed_global = total_days_global
+    days_left = total_days_global - days_passed_global
 
-    current_iter_date = start_date
-    
-    for row in range(grid_rows):
-        for col in range(grid_cols):
-            if current_iter_date > end_date:
-                break
+    # --- MODE SPECIFIC LOGIC ---
+    if mode_param == 'year_calendar':
+        # --- NEW YEAR CALENDAR MODE (12 Month Grid) ---
+        
+        # Grid Configuration for 12 months
+        COLS = 3
+        ROWS = 4
+        
+        # Visual config for mini-grids
+        MONTH_DOT_RADIUS = 12
+        MONTH_DOT_PADDING = 10
+        MINI_GRID_COLS = 7 # 7 days wide
+        
+        # Calculate width of one month block
+        # Width = (12*2 * 7) + (10 * 6) = 168 + 60 = 228 px
+        BLOCK_WIDTH = (MONTH_DOT_RADIUS * 2 * MINI_GRID_COLS) + (MONTH_DOT_PADDING * (MINI_GRID_COLS - 1))
+        
+        # Calculate margins
+        # Total content width = 3 * BLOCK_WIDTH + 2 * GAP
+        BLOCK_GAP_X = 150
+        TOTAL_CONTENT_WIDTH = (COLS * BLOCK_WIDTH) + ((COLS - 1) * BLOCK_GAP_X)
+        START_X_GLOBAL = (IMAGE_WIDTH - TOTAL_CONTENT_WIDTH) // 2
+        
+        BLOCK_GAP_Y = 120
+        START_Y_GLOBAL = 350 # Top margin
+        
+        month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+        
+        current_iter_date = datetime.date(current_year, 1, 1)
+        
+        for m in range(1, 13): # 1 to 12
+            # Find grid position (0-2 col, 0-3 row)
+            idx = m - 1
+            row_idx = idx // COLS
+            col_idx = idx % COLS
             
-            # Default Color
-            draw_color = palette['INACTIVE']
+            month_start_x = START_X_GLOBAL + col_idx * (BLOCK_WIDTH + BLOCK_GAP_X)
+            month_start_y = START_Y_GLOBAL + row_idx * (400) # Fixed height per row area
             
-            # Weekend Check (Saturday=5, Sunday=6)
-            if highlight_weekends_param and current_iter_date.weekday() >= 5:
-                draw_color = palette['WEEKEND']
+            # Draw Month Name
+            draw.text((month_start_x, month_start_y - 60), month_names[idx], font=font_small, fill=palette['INACTIVE'])
             
-            draw_emoji_img = None
+            # Draw Days for this month
+            days_in_month = calendar.monthrange(current_year, m)[1]
             
-            if current_iter_date in special_dates:
-                emoji_char = special_dates[current_iter_date]
-                if emoji_char:
-                    # Download the image from CDN
-                    draw_emoji_img = get_emoji_image(emoji_char)
-                    # If download fails, fallback to Gold color
-                    if not draw_emoji_img:
-                        draw_color = palette['SPECIAL']
-                else:
-                    draw_color = palette['SPECIAL']
-            elif current_iter_date == now.date():
-                draw_color = palette['ACTIVE']
-            elif current_iter_date < now.date():
-                draw_color = palette['PASSED']
-
-            x = int(start_x + col * (dot_radius * 2 + DOT_SPACING))
-            y = int(start_y + row * (dot_radius * 2 + DOT_SPACING))
-
-            if draw_emoji_img:
-                # Resize emoji to fit in the dot area
-                target_size = (dot_radius * 2, dot_radius * 2)
-                # High-quality resize
-                emoji_resized = draw_emoji_img.resize(target_size, Image.Resampling.LANCZOS)
+            for d in range(1, days_in_month + 1):
+                current_day_date = datetime.date(current_year, m, d)
                 
-                # We use the alpha channel of the emoji as a mask
-                img.paste(emoji_resized, (x, y), emoji_resized)
-            else:
-                draw.ellipse((x, y, x + dot_radius * 2, y + dot_radius * 2), fill=draw_color)
-            
-            current_iter_date += datetime.timedelta(days=1)
+                # Determine Color
+                draw_color = palette['INACTIVE']
+                if highlight_weekends_param and current_day_date.weekday() >= 5:
+                    draw_color = palette['WEEKEND']
+                
+                draw_emoji_img = None
+                
+                if current_day_date in special_dates:
+                    emoji_char = special_dates[current_day_date]
+                    if emoji_char:
+                        draw_emoji_img = get_emoji_image(emoji_char)
+                        if not draw_emoji_img: draw_color = palette['SPECIAL']
+                    else:
+                        draw_color = palette['SPECIAL']
+                elif current_day_date == now.date():
+                    draw_color = palette['ACTIVE']
+                elif current_day_date < now.date():
+                    draw_color = palette['PASSED']
 
-    # --- Draw Bottom Info ---
-    range_text = "year"
-    if mode_param == 'month': range_text = now.strftime("%b")
-    elif mode_param == 'quarter': range_text = f"Q{(now.month-1)//3 + 1}"
-    elif mode_param == 'fortnight': range_text = "period"
+                # Calc dot position inside block (Row-major, 7 cols wide)
+                d_idx = d - 1
+                dot_row = d_idx // MINI_GRID_COLS
+                dot_col = d_idx % MINI_GRID_COLS
+                
+                x = month_start_x + dot_col * (MONTH_DOT_RADIUS * 2 + MONTH_DOT_PADDING)
+                y = month_start_y + dot_row * (MONTH_DOT_RADIUS * 2 + MONTH_DOT_PADDING)
+                
+                if draw_emoji_img:
+                    target_size = (MONTH_DOT_RADIUS * 2, MONTH_DOT_RADIUS * 2)
+                    emoji_resized = draw_emoji_img.resize(target_size, Image.Resampling.LANCZOS)
+                    img.paste(emoji_resized, (int(x), int(y)), emoji_resized)
+                else:
+                    draw.ellipse((x, y, x + MONTH_DOT_RADIUS * 2, y + MONTH_DOT_RADIUS * 2), fill=draw_color)
+        
+        # Determine text Y for footer elements
+        grid_bottom_y = START_Y_GLOBAL + 3 * 400 + 250 
+
+    else:
+        # --- ORIGINAL MODES (Year, Quarter, Month, Fortnight) ---
+        grid_cols = GRID_COLS
+        grid_rows = GRID_ROWS
+        dot_radius = DOT_RADIUS
+        dot_spacing = DOT_PADDING
+        
+        if mode_param == 'month':
+            start_date = datetime.date(current_year, now.month, 1)
+            last_day = calendar.monthrange(current_year, now.month)[1]
+            end_date = datetime.date(current_year, now.month, last_day)
+            grid_cols, grid_rows = 7, 5
+            dot_radius, dot_spacing = 35, 45
+            days_left_mode = (end_date - now.date()).days
+            if days_left_mode < 0: days_left_mode = 0
+            range_text = now.strftime("%b")
+            
+        elif mode_param == 'quarter':
+            q = (now.month - 1) // 3 + 1
+            start_month = (q - 1) * 3 + 1
+            end_month = start_month + 2
+            start_date = datetime.date(current_year, start_month, 1)
+            last_day_q = calendar.monthrange(current_year, end_month)[1]
+            end_date = datetime.date(current_year, end_month, last_day_q)
+            grid_cols, grid_rows = 10, 10
+            dot_radius, dot_spacing = 25, 25
+            days_left_mode = (end_date - now.date()).days
+            if days_left_mode < 0: days_left_mode = 0
+            range_text = f"Q{q}"
+
+        elif mode_param == 'fortnight':
+            start_date = now.date() - datetime.timedelta(days=now.weekday())
+            end_date = start_date + datetime.timedelta(days=13)
+            grid_cols, grid_rows = 7, 2
+            dot_radius, dot_spacing = 45, 50
+            days_left_mode = (end_date - now.date()).days
+            if days_left_mode < 0: days_left_mode = 0
+            range_text = "period"
+
+        else: # Year (Default Single Grid)
+            start_date = datetime.date(current_year, 1, 1)
+            end_date = datetime.date(current_year, 12, 31)
+            days_left_mode = days_left
+            range_text = "year"
+        
+        # Common Draw Loop for these modes
+        DOT_SPACING = dot_spacing
+        total_grid_w = (grid_cols * (dot_radius * 2)) + ((grid_cols - 1) * DOT_SPACING)
+        total_grid_h = (grid_rows * (dot_radius * 2)) + ((grid_rows - 1) * DOT_SPACING)
+        
+        start_x = (IMAGE_WIDTH - total_grid_w) // 2
+        
+        if mode_param == 'year':
+            start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2) + 150 
+        else:
+            start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2)
+        
+        if start_y < 200: start_y = 200
+
+        current_iter_date = start_date
+        
+        for row in range(grid_rows):
+            for col in range(grid_cols):
+                if current_iter_date > end_date: break
+                
+                # Color Logic
+                draw_color = palette['INACTIVE']
+                if highlight_weekends_param and current_iter_date.weekday() >= 5:
+                    draw_color = palette['WEEKEND']
+                
+                draw_emoji_img = None
+                if current_iter_date in special_dates:
+                    emoji_char = special_dates[current_iter_date]
+                    if emoji_char:
+                        draw_emoji_img = get_emoji_image(emoji_char)
+                        if not draw_emoji_img: draw_color = palette['SPECIAL']
+                    else:
+                        draw_color = palette['SPECIAL']
+                elif current_iter_date == now.date():
+                    draw_color = palette['ACTIVE']
+                elif current_iter_date < now.date():
+                    draw_color = palette['PASSED']
+
+                x = int(start_x + col * (dot_radius * 2 + DOT_SPACING))
+                y = int(start_y + row * (dot_radius * 2 + DOT_SPACING))
+
+                if draw_emoji_img:
+                    target_size = (dot_radius * 2, dot_radius * 2)
+                    emoji_resized = draw_emoji_img.resize(target_size, Image.Resampling.LANCZOS)
+                    img.paste(emoji_resized, (x, y), emoji_resized)
+                else:
+                    draw.ellipse((x, y, x + dot_radius * 2, y + dot_radius * 2), fill=draw_color)
+                
+                current_iter_date += datetime.timedelta(days=1)
+        
+        grid_bottom_y = start_y + total_grid_h
+
+    # --- Draw Bottom Info (Common) ---
+    # Recalculate range text for specific modes if needed, but 'year' is default fallback
+    range_text_final = "year"
+    if mode_param == 'month': range_text_final = now.strftime("%b")
+    elif mode_param == 'quarter': range_text_final = f"Q{(now.month-1)//3 + 1}"
+    elif mode_param == 'fortnight': range_text_final = "period"
     
-    bottom_text = f"{days_left}d left in {range_text}"
-    
+    # Use global stats for Year modes
+    if mode_param in ['year', 'year_calendar']:
+        bottom_text = f"{days_left}d left in year"
+        progress_ratio = days_passed_global / total_days_global if total_days_global > 0 else 0
+    else:
+        # Use local stats calculated in the else block above? 
+        # Actually easier to re-calc local range here if needed or just use passed vars
+        # For simplicity, let's just re-calc local days for progress bar
+        if mode_param == 'month':
+            s = datetime.date(current_year, now.month, 1)
+            e = datetime.date(current_year, now.month, calendar.monthrange(current_year, now.month)[1])
+        elif mode_param == 'quarter':
+            q = (now.month - 1) // 3 + 1
+            s = datetime.date(current_year, (q-1)*3+1, 1)
+            e = datetime.date(current_year, (q-1)*3+3, calendar.monthrange(current_year, (q-1)*3+3)[1])
+        elif mode_param == 'fortnight':
+            s = now.date() - datetime.timedelta(days=now.weekday())
+            e = s + datetime.timedelta(days=13)
+        
+        if mode_param not in ['year', 'year_calendar']:
+            t = (e - s).days + 1
+            p = (now.date() - s).days + 1
+            if p < 0: p = 0
+            if p > t: p = t
+            bottom_text = f"{t-p}d left in {range_text_final}"
+            progress_ratio = p / t if t > 0 else 0
+
     bbox_text = draw.textbbox((0, 0), bottom_text, font=font_small)
     text_width = bbox_text[2] - bbox_text[0]
     text_x = (IMAGE_WIDTH - text_width) / 2
-    text_y = start_y + total_grid_h + 80
+    text_y = grid_bottom_y + 80
     draw.text((text_x, text_y), bottom_text, font=font_small, fill=palette['ACTIVE'])
 
     # --- Draw Progress Bar ---
     BAR_TOTAL_WIDTH = 600
-    if total_days > 0:
-        progress_ratio = days_passed / total_days
-    else:
-        progress_ratio = 0
-
     bar_start_x = (IMAGE_WIDTH - BAR_TOTAL_WIDTH) / 2
     bar_start_y = text_y + 60 
 
@@ -1062,7 +1176,9 @@ def generate_grid():
         BLOCK_GAP = 12
         single_block_width = (BAR_TOTAL_WIDTH - ((BAR_BLOCKS - 1) * BLOCK_GAP)) / BAR_BLOCKS
         filled_blocks = int(progress_ratio * BAR_BLOCKS)
-        if days_passed > 0 and filled_blocks == 0: filled_blocks = 1
+        # Ensure at least one block is filled if any time passed
+        if progress_ratio > 0 and filled_blocks == 0: filled_blocks = 1
+        
         for i in range(BAR_BLOCKS):
             b_x1 = bar_start_x + i * (single_block_width + BLOCK_GAP)
             b_y1 = bar_start_y
