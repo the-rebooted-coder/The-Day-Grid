@@ -277,13 +277,16 @@ HTML_DASHBOARD = """
         .shortcut-btn { background: white; color: black; display: block; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 10px; box-sizing: border-box; }
         
         footer { margin-top: auto; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; padding-bottom: 10px; width: 100%; text-align: center; }
-        .footer-link { color: #555; text-decoration: none; border-bottom: 1px dotted #555; transition: color 0.2s; }
+        
+        .footer-link { color: #555; text-decoration: none; border-bottom: 1px dotted #555; transition: color 0.2s; cursor: pointer; font-size: 11px; margin-top: 5px; display: inline-block; }
         .footer-link:hover { color: #ff693c; border-color: #ff693c; }
+        
         .labs-product { font-size: 10px; color: #555; margin-top: 8px; font-weight: 600; letter-spacing: 0.5px; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
         .modal { background: #1c1c1e; border: 1px solid #333; padding: 25px; border-radius: 16px; width: 90%; max-width: 320px; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .modal h3 { margin-top: 0; color: white; text-align: center; }
+        
         .color-legend { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
         .legend-item { display: flex; align-items: center; gap: 15px; font-size: 0.95rem; color: #ccc; }
         .dot { width: 16px; height: 16px; border-radius: 50%; display: inline-block; flex-shrink: 0; }
@@ -291,7 +294,13 @@ HTML_DASHBOARD = """
         .dot.orange { background: #ff693c; box-shadow: 0 0 8px rgba(255, 105, 60, 0.6); }
         .dot.yellow { background: #ffd700; box-shadow: 0 0 8px rgba(255, 215, 0, 0.6); }
         .dot.gray { background: #444446; }
+        
         .close-modal { background: #333; border: none; color: white; width: 100%; padding: 12px; border-radius: 10px; margin-top: 25px; cursor: pointer; font-weight: 600; }
+
+        /* Release Notes Styles */
+        .release-list { text-align: left; padding-left: 20px; color: #ccc; font-size: 0.9rem; line-height: 1.6; margin-bottom: 25px; }
+        .github-btn { display: block; background: transparent; border: 1px solid #555; color: #888; text-decoration: none; padding: 12px; border-radius: 10px; text-align: center; font-weight: 600; font-size: 14px; transition: all 0.2s; }
+        .github-btn:hover { border-color: #ff693c; color: #ff693c; }
 
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
@@ -400,7 +409,7 @@ HTML_DASHBOARD = """
 
     <footer>
         &lt;/&gt; with ❤️ by Spandan.<br>
-        <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="footer-link" style="font-size: 11px; margin-top: 5px; display: inline-block;">Version 3.0 Prod.</a>
+        <span onclick="openReleaseModal()" class="footer-link">Version 3.0 Prod.</span>
         <div class="labs-product">An S² Labs Product 🥼</div>
     </footer>
 
@@ -426,6 +435,19 @@ HTML_DASHBOARD = """
                 </div>
             </div>
             <button class="close-modal" onclick="toggleModal(false)">Whatever</button>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="releaseModalOverlay" onclick="closeReleaseModal(event)">
+        <div class="modal">
+            <h3>Version 3.0 Notes</h3>
+            <ul class="release-list">
+                <li><strong>Remember Me:</strong> Your settings, dates, and signature now auto-save locally.</li>
+                <li><strong>Weekend Highlight:</strong> New toggle to visually dim Saturdays & Sundays.</li>
+                <li><strong>Live Mockup:</strong> Real-time iPhone 15 Pro preview directly on the dashboard.</li>
+            </ul>
+            <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="github-btn">View Source on GitHub</a>
+            <button class="close-modal" onclick="toggleReleaseModal(false)">Close</button>
         </div>
     </div>
 
@@ -610,10 +632,29 @@ HTML_DASHBOARD = """
             }
         }
 
+        // --- LEGEND MODAL ---
         function openModal() { toggleModal(true); }
         function closeModal(e) { if(e.target === document.getElementById('modalOverlay')) toggleModal(false); }
         function toggleModal(show) {
             const overlay = document.getElementById('modalOverlay');
+            const modal = overlay.querySelector('.modal');
+            if (show) {
+                overlay.style.display = 'flex';
+                void overlay.offsetWidth;
+                overlay.style.opacity = '1';
+                modal.style.transform = 'scale(1)';
+            } else {
+                overlay.style.opacity = '0';
+                modal.style.transform = 'scale(0.9)';
+                setTimeout(() => { overlay.style.display = 'none'; }, 300);
+            }
+        }
+
+        // --- RELEASE NOTES MODAL ---
+        function openReleaseModal() { toggleReleaseModal(true); }
+        function closeReleaseModal(e) { if(e.target === document.getElementById('releaseModalOverlay')) toggleReleaseModal(false); }
+        function toggleReleaseModal(show) {
+            const overlay = document.getElementById('releaseModalOverlay');
             const modal = overlay.querySelector('.modal');
             if (show) {
                 overlay.style.display = 'flex';
