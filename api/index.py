@@ -350,7 +350,7 @@ HTML_DASHBOARD = """
             <div style="margin-bottom: 20px;">
                 <select id="view-mode" style="width: 100%">
                     <option value="year">Full Year (Default)</option>
-                    <option value="year_calendar">Year Calendar (12 Months)</option>
+                    <option value="segregated_months">Segregated Months</option>
                     <option value="quarter">Current Quarter</option>
                     <option value="month">Current Month</option>
                     <option value="fortnight">Fortnight (14 Days)</option>
@@ -932,7 +932,7 @@ def generate_grid():
     days_left = total_days_global - days_passed_global
 
     # --- MODE SPECIFIC LOGIC ---
-    if mode_param == 'year_calendar':
+    if mode_param == 'segregated_months':
         # --- NEW YEAR CALENDAR MODE (12 Month Grid) ---
         
         # Grid Configuration for 12 months
@@ -1125,7 +1125,7 @@ def generate_grid():
     elif mode_param == 'fortnight': range_text_final = "period"
     
     # Use global stats for Year modes
-    if mode_param in ['year', 'year_calendar']:
+    if mode_param in ['year', 'segregated_months']:
         bottom_text = f"{days_left}d left in year"
         progress_ratio = days_passed_global / total_days_global if total_days_global > 0 else 0
     else:
@@ -1143,7 +1143,7 @@ def generate_grid():
             s = now.date() - datetime.timedelta(days=now.weekday())
             e = s + datetime.timedelta(days=13)
         
-        if mode_param not in ['year', 'year_calendar']:
+        if mode_param not in ['year', 'segregated_months']:
             t = (e - s).days + 1
             p = (now.date() - s).days + 1
             if p < 0: p = 0
@@ -1196,7 +1196,13 @@ def generate_grid():
         bbox_sig = draw.textbbox((0, 0), signature_param, font=font_signature)
         sig_width = bbox_sig[2] - bbox_sig[0]
         sig_x = (IMAGE_WIDTH - sig_width) / 2
-        sig_y = bar_start_y + BAR_HEIGHT + 120 
+        
+        # Calculate specific signature gap
+        sig_gap = 120
+        if mode_param == 'segregated_months':
+            sig_gap = 200 # Push it lower specifically for this mode
+            
+        sig_y = bar_start_y + BAR_HEIGHT + sig_gap
         draw.text((sig_x, sig_y), signature_param, font=font_signature, fill=palette['TEXT'])
 
     img_io = io.BytesIO()
