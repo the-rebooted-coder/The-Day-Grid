@@ -70,7 +70,6 @@ HTML_DASHBOARD = """
     <script defer src="/_vercel/insights/script.js"></script>
 
     <style>
-        /* SCROLL FIX */
         body { 
             background: #1c1c1e; 
             color: white; 
@@ -118,6 +117,17 @@ HTML_DASHBOARD = """
         input[type="date"], input[type="text"], select { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; color-scheme: dark; width: 100%; box-sizing: border-box; }
         input[type="date"]:focus, input[type="text"]:focus, select:focus { border-color: #ff693c; }
         
+        /* RESTRICTED EMOJI SELECTOR */
+        .emoji-select {
+            flex-grow: 0 !important;
+            width: 70px !important;
+            text-align: center;
+            font-size: 18px !important;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
+        }
+
         .btn-icon { background: #333; border: 1px solid #444; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 18px; flex-shrink: 0; }
         .btn-icon:hover { background: #444; }
 
@@ -208,6 +218,8 @@ HTML_DASHBOARD = """
             <div id="date-list">
                 <div class="date-row">
                     <input type="date" class="date-input">
+                    <select class="emoji-select">
+                        <option value="">🟡</option> <option value="🎂">🎂</option> <option value="❤️">❤️</option> <option value="🚀">🚀</option> <option value="💰">💰</option> <option value="✈️">✈️</option> <option value="💀">💀</option> <option value="🍺">🍺</option> </select>
                     <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
                 </div>
             </div>
@@ -337,13 +349,30 @@ HTML_DASHBOARD = """
             const container = document.getElementById('date-list');
             const div = document.createElement('div');
             div.className = 'date-row';
-            div.innerHTML = `<input type="date" class="date-input"><button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>`;
+            // Duplicate the select options manually or clone
+            div.innerHTML = `
+                <input type="date" class="date-input">
+                <select class="emoji-select">
+                    <option value="">🟡</option>
+                    <option value="🎂">🎂</option>
+                    <option value="❤️">❤️</option>
+                    <option value="🚀">🚀</option>
+                    <option value="💰">💰</option>
+                    <option value="✈️">✈️</option>
+                    <option value="💀">💀</option>
+                    <option value="🍺">🍺</option>
+                </select>
+                <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
+            `;
             container.appendChild(div);
         }
         function removeDate(btn) {
             const container = document.getElementById('date-list');
             if (container.children.length > 1) btn.parentElement.remove();
-            else btn.parentElement.querySelector('input').value = '';
+            else {
+                const inputs = btn.parentElement.querySelectorAll('input, select');
+                inputs.forEach(i => i.value = '');
+            }
         }
 
         function setTheme(theme) {
@@ -383,12 +412,23 @@ HTML_DASHBOARD = """
         }
 
         function generateCustom() {
-            const inputs = document.querySelectorAll('.date-input');
-            let dateArray = [];
-            inputs.forEach(input => {
-                if (input.value) {
-                    const parts = input.value.split('-'); 
-                    if (parts.length === 3) dateArray.push(`${parts[1]}-${parts[2]}`);
+            const rows = document.querySelectorAll('.date-row');
+            let dateEntries = [];
+            
+            rows.forEach(row => {
+                const dateInput = row.querySelector('.date-input');
+                const emojiSelect = row.querySelector('.emoji-select');
+                
+                if (dateInput.value) {
+                    const parts = dateInput.value.split('-'); 
+                    if (parts.length === 3) {
+                        let entry = `${parts[1]}-${parts[2]}`;
+                        // Use dropdown value
+                        if (emojiSelect && emojiSelect.value) {
+                            entry += `|${emojiSelect.value}`;
+                        }
+                        dateEntries.push(entry);
+                    }
                 }
             });
 
@@ -396,7 +436,8 @@ HTML_DASHBOARD = """
             const mode = document.getElementById('view-mode').value;
             const barStyle = document.getElementById('bar-style').value;
             
-            const val = dateArray.join(',');
+            const val = dateEntries.join(',');
+            
             const baseUrl = window.location.origin + "/api/image";
             const params = new URLSearchParams();
             
@@ -407,7 +448,7 @@ HTML_DASHBOARD = """
             if (barStyle !== 'segmented') params.append('bar_style', barStyle);
             
             const fullUrl = baseUrl + "?" + params.toString();
-            const isDefault = dateArray.length === 0 && selectedTheme === 'dark' && sig === '' && mode === 'year' && barStyle === 'segmented';
+            const isDefault = dateEntries.length === 0 && selectedTheme === 'dark' && sig === '' && mode === 'year' && barStyle === 'segmented';
 
             if (isDefault) {
                 navigator.clipboard.writeText(fullUrl).then(() => {
@@ -465,76 +506,62 @@ def generate_grid():
     current_year = now.year
     
     # 4. Determine Grid Dimensions & Range based on Mode
-    # Default Year Logic
     grid_cols = GRID_COLS
     grid_rows = GRID_ROWS
     dot_radius = DOT_RADIUS
     dot_spacing = DOT_PADDING
     
-    # Dates logic
     if mode_param == 'month':
         start_date = datetime.date(current_year, now.month, 1)
         last_day = calendar.monthrange(current_year, now.month)[1]
         end_date = datetime.date(current_year, now.month, last_day)
-        
-        # Month View (Revised Math for Center)
-        grid_cols = 7
-        grid_rows = 5
-        dot_radius = 35 
-        dot_spacing = 45
+        grid_cols, grid_rows = 7, 5
+        dot_radius, dot_spacing = 35, 45
         
     elif mode_param == 'quarter':
-        # Calculate Quarter
         q = (now.month - 1) // 3 + 1
         start_month = (q - 1) * 3 + 1
         end_month = start_month + 2
-        
         start_date = datetime.date(current_year, start_month, 1)
         last_day_q = calendar.monthrange(current_year, end_month)[1]
         end_date = datetime.date(current_year, end_month, last_day_q)
-        
-        # Quarter View
-        grid_cols = 10
-        grid_rows = 10 
-        dot_radius = 25 
-        dot_spacing = 25
+        grid_cols, grid_rows = 10, 10
+        dot_radius, dot_spacing = 25, 25
         
     elif mode_param == 'fortnight':
-        # 14 Days starting from the most recent Monday
         start_date = now.date() - datetime.timedelta(days=now.weekday())
         end_date = start_date + datetime.timedelta(days=13)
+        grid_cols, grid_rows = 7, 2
+        dot_radius, dot_spacing = 45, 50
         
-        # Fortnight View
-        grid_cols = 7
-        grid_rows = 2
-        dot_radius = 45 
-        dot_spacing = 50
-        
-    else: # Year (Default)
+    else: # Year
         start_date = datetime.date(current_year, 1, 1)
         end_date = datetime.date(current_year, 12, 31)
     
     total_days = (end_date - start_date).days + 1
-    
-    # Days passed in THIS period
     days_passed = (now.date() - start_date).days + 1
     if days_passed < 0: days_passed = 0
     if days_passed > total_days: days_passed = total_days
     
     days_left = total_days - days_passed
 
-    # 5. Parse Special Dates
-    special_date_objects = []
+    # 5. Parse Special Dates & Emojis
+    special_dates = {}
     if dates_param:
-        date_strings = dates_param.split(',')
-        for d_str in date_strings:
+        items = dates_param.split(',')
+        for item in items:
+            if '|' in item:
+                d_str, emoji = item.split('|', 1)
+            else:
+                d_str, emoji = item, None
+            
             try:
                 parts = d_str.strip().split('-')
                 if len(parts) == 2:
                     m, d = int(parts[0]), int(parts[1])
                     try:
                         date_obj = datetime.date(current_year, m, d)
-                        special_date_objects.append(date_obj)
+                        special_dates[date_obj] = emoji
                     except ValueError: pass
             except ValueError: pass
 
@@ -545,8 +572,11 @@ def generate_grid():
     # Fonts
     try:
         font_small = ImageFont.truetype(FONT_PATH, 40)
+        # We try to use the standard font for emoji fallback
+        font_emoji = ImageFont.truetype(FONT_PATH, int(dot_radius * 1.5))
     except:
         font_small = ImageFont.load_default()
+        font_emoji = font_small
 
     try:
         font_signature = ImageFont.truetype(FONT_SIGNATURE_PATH, 55)
@@ -560,12 +590,10 @@ def generate_grid():
     
     start_x = (IMAGE_WIDTH - total_grid_w) // 2
     
-    # VERTICAL ALIGNMENT FIX
+    # Alignment Logic
     if mode_param == 'year':
-        # Shift DOWN for the tall year grid to avoid the clock
         start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2) + 150 
     else:
-        # True Center for smaller grids (Month, Quarter, Fortnight)
         start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2)
     
     if start_y < 200: start_y = 200
@@ -577,19 +605,38 @@ def generate_grid():
             if current_iter_date > end_date:
                 break
             
-            # Color Logic
-            if current_iter_date in special_date_objects:
-                color = palette['SPECIAL']
+            draw_color = palette['INACTIVE']
+            draw_emoji = None
+            
+            if current_iter_date in special_dates:
+                if special_dates[current_iter_date]:
+                    draw_emoji = special_dates[current_iter_date]
+                else:
+                    draw_color = palette['SPECIAL']
             elif current_iter_date == now.date():
-                color = palette['ACTIVE']
+                draw_color = palette['ACTIVE']
             elif current_iter_date < now.date():
-                color = palette['PASSED']
-            else:
-                color = palette['INACTIVE']
+                draw_color = palette['PASSED']
 
             x = start_x + col * (dot_radius * 2 + DOT_SPACING)
             y = start_y + row * (dot_radius * 2 + DOT_SPACING)
-            draw.ellipse((x, y, x + dot_radius * 2, y + dot_radius * 2), fill=color)
+
+            if draw_emoji:
+                # 1. Attempt to draw the Emoji character
+                # Even if the font doesn't have color, it might have the glyph.
+                # If it lacks the glyph, it draws a box. 
+                # We enforce the 'SPECIAL' (Gold) color so even the outline/box looks intentional.
+                try:
+                    bbox = draw.textbbox((0, 0), draw_emoji, font=font_emoji)
+                    e_w = bbox[2] - bbox[0]
+                    e_h = bbox[3] - bbox[1]
+                    e_x = x + dot_radius - (e_w / 2)
+                    e_y = y + dot_radius - (e_h / 2) - (dot_radius * 0.2)
+                    draw.text((e_x, e_y), draw_emoji, font=font_emoji, fill=palette['SPECIAL'])
+                except:
+                     draw.ellipse((x, y, x + dot_radius * 2, y + dot_radius * 2), fill=palette['SPECIAL'])
+            else:
+                draw.ellipse((x, y, x + dot_radius * 2, y + dot_radius * 2), fill=draw_color)
             
             current_iter_date += datetime.timedelta(days=1)
 
@@ -609,7 +656,6 @@ def generate_grid():
 
     # --- Draw Progress Bar ---
     BAR_TOTAL_WIDTH = 600
-    
     if total_days > 0:
         progress_ratio = days_passed / total_days
     else:
@@ -620,42 +666,23 @@ def generate_grid():
 
     if bar_style_param == 'solid':
         BAR_HEIGHT = 20
-        # Background
-        draw.rounded_rectangle(
-            (bar_start_x, bar_start_y, bar_start_x + BAR_TOTAL_WIDTH, bar_start_y + BAR_HEIGHT),
-            radius=10, fill=palette['INACTIVE']
-        )
-        # Foreground
+        draw.rounded_rectangle((bar_start_x, bar_start_y, bar_start_x + BAR_TOTAL_WIDTH, bar_start_y + BAR_HEIGHT), radius=10, fill=palette['INACTIVE'])
         fill_width = int(BAR_TOTAL_WIDTH * progress_ratio)
         if fill_width > 0:
-            draw.rounded_rectangle(
-                (bar_start_x, bar_start_y, bar_start_x + fill_width, bar_start_y + BAR_HEIGHT),
-                radius=10, fill=palette['ACTIVE']
-            )
-
+            draw.rounded_rectangle((bar_start_x, bar_start_y, bar_start_x + fill_width, bar_start_y + BAR_HEIGHT), radius=10, fill=palette['ACTIVE'])
     elif bar_style_param == 'minimal':
         BAR_HEIGHT = 6
-        # Background
-        draw.rounded_rectangle(
-            (bar_start_x, bar_start_y, bar_start_x + BAR_TOTAL_WIDTH, bar_start_y + BAR_HEIGHT),
-            radius=3, fill=palette['INACTIVE']
-        )
-        # Foreground
+        draw.rounded_rectangle((bar_start_x, bar_start_y, bar_start_x + BAR_TOTAL_WIDTH, bar_start_y + BAR_HEIGHT), radius=3, fill=palette['INACTIVE'])
         fill_width = int(BAR_TOTAL_WIDTH * progress_ratio)
         if fill_width > 0:
-            draw.rounded_rectangle(
-                (bar_start_x, bar_start_y, bar_start_x + fill_width, bar_start_y + BAR_HEIGHT),
-                radius=3, fill=palette['ACTIVE']
-            )
-
-    else: # Segmented (Default)
+            draw.rounded_rectangle((bar_start_x, bar_start_y, bar_start_x + fill_width, bar_start_y + BAR_HEIGHT), radius=3, fill=palette['ACTIVE'])
+    else:
         BAR_HEIGHT = 20
         BAR_BLOCKS = 10
         BLOCK_GAP = 12
         single_block_width = (BAR_TOTAL_WIDTH - ((BAR_BLOCKS - 1) * BLOCK_GAP)) / BAR_BLOCKS
         filled_blocks = int(progress_ratio * BAR_BLOCKS)
         if days_passed > 0 and filled_blocks == 0: filled_blocks = 1
-
         for i in range(BAR_BLOCKS):
             b_x1 = bar_start_x + i * (single_block_width + BLOCK_GAP)
             b_y1 = bar_start_y
@@ -672,7 +699,6 @@ def generate_grid():
         sig_y = bar_start_y + BAR_HEIGHT + 120 
         draw.text((sig_x, sig_y), signature_param, font=font_signature, fill=palette['TEXT'])
 
-    # 6. Return Image
     img_io = io.BytesIO()
     img.save(img_io, 'PNG')
     img_io.seek(0)
