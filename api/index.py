@@ -10,17 +10,12 @@ import json
 app = Flask(__name__)
 
 # --- Configuration & Themes ---
-# Mobile (Original)
-MOBILE_WIDTH = 1170
-MOBILE_HEIGHT = 2532
+IMAGE_WIDTH = 1170
+IMAGE_HEIGHT = 2532
 
-# Desktop (New)
-DESKTOP_WIDTH = 1920
-DESKTOP_HEIGHT = 1080
-
-# Default (Year) Grid Settings - Mobile
-GRID_COLS_MOBILE = 15
-GRID_ROWS_MOBILE = 25
+# Default (Year) Grid Settings
+GRID_COLS = 15
+GRID_ROWS = 25
 DOT_RADIUS = 18
 DOT_PADDING = 15
 
@@ -83,7 +78,7 @@ HTML_DASHBOARD = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>The Grid Generator</title>
-    <meta name="description" content="Visualize your year. A minimal wallpaper generator for iOS, Mac & Windows.">
+    <meta name="description" content="Visualize your year. A minimal wallpaper generator for iOS.">
 
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://the-day-grid.vercel.app/">
@@ -158,7 +153,7 @@ HTML_DASHBOARD = """
         .info-btn { background: none; border: 1px solid #444; color: #888; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; font-family: serif; font-weight: bold; }
         .info-btn:hover { border-color: #ff693c; color: #ff693c; }
 
-        .content-wrapper { flex-grow: 1; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 360px; margin-bottom: 40px; }
+        .content-wrapper { flex-grow: 1; display: flex; flex-direction: column; align-items: center; width: 100%; max-width: 330px; margin-bottom: 40px; }
 
         button.generate-btn { background: #ff693c; color: white; border: none; padding: 15px 30px; border-radius: 12px; font-weight: bold; font-size: 16px; cursor: pointer; width: 100%; transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); box-shadow: 0 4px 15px rgba(255, 105, 60, 0.3); }
         button.generate-btn:hover { opacity: 0.9; }
@@ -262,28 +257,33 @@ HTML_DASHBOARD = """
             transition: all 0.3s ease;
         }
         
-        /* DESKTOP MONITOR MOCKUP CSS */
-        .monitor-mockup {
-            width: 320px;
-            aspect-ratio: 16 / 9;
+        /* DYNAMIC ISLAND STYLE (Default) */
+        .iphone-mockup.dynamic-island .dynamic-island {
+            width: 80px;
+            height: 24px;
             background: #000;
-            border: 10px solid #2b2b2b;
-            border-bottom-width: 15px;
-            position: relative;
-            margin: 20px auto 0 auto;
-            overflow: hidden;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-            border-radius: 8px;
-            display: none; /* Hidden by default */
-        }
-        .monitor-stand { 
-            width: 80px; height: 30px; background: #222; margin: 0 auto 20px auto; border-radius: 0 0 10px 10px; display: none;
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 20px;
+            z-index: 10;
         }
 
-        /* DYNAMIC ISLAND STYLE */
-        .iphone-mockup.dynamic-island .dynamic-island { width: 80px; height: 24px; background: #000; position: absolute; top: 12px; left: 50%; transform: translateX(-50%); border-radius: 20px; z-index: 10; }
         /* NOTCH STYLE */
-        .iphone-mockup.notch .dynamic-island { width: 140px; height: 28px; background: #000; position: absolute; top: 0; left: 50%; transform: translateX(-50%); border-bottom-left-radius: 16px; border-bottom-right-radius: 16px; border-radius: 0 0 16px 16px; z-index: 10; }
+        .iphone-mockup.notch .dynamic-island {
+            width: 140px;
+            height: 28px;
+            background: #000;
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            border-bottom-left-radius: 16px;
+            border-bottom-right-radius: 16px;
+            border-radius: 0 0 16px 16px; /* explicit standard */
+            z-index: 10;
+        }
 
         .mockup-img {
             width: 100%;
@@ -293,7 +293,7 @@ HTML_DASHBOARD = """
         }
 
         .shortcut-section { margin-top: 20px; background: #2c2c2e; padding: 15px; border-radius: 12px; border: 1px solid #444; }
-        .shortcut-btn { background: white; color: black; display: block; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 10px; box-sizing: border-box; cursor: pointer; border: none; font-size: 14px; }
+        .shortcut-btn { background: white; color: black; display: block; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 10px; box-sizing: border-box; }
         
         footer { margin-top: auto; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; padding-bottom: 10px; width: 100%; text-align: center; }
         
@@ -302,7 +302,6 @@ HTML_DASHBOARD = """
         
         .labs-product { font-size: 10px; color: #555; margin-top: 8px; font-weight: 600; letter-spacing: 0.5px; }
 
-        /* MODALS */
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
         .modal { 
             background: #1c1c1e; 
@@ -314,7 +313,7 @@ HTML_DASHBOARD = """
             transform: scale(0.9); 
             transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
             box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
-            max-height: 70vh; 
+            max-height: 70vh; /* Reduced from 80vh for safe top margin */
             overflow-y: auto; 
         }
         
@@ -335,12 +334,6 @@ HTML_DASHBOARD = """
         .github-btn { display: block; background: transparent; border: 1px solid #555; color: #888; text-decoration: none; padding: 12px; border-radius: 10px; text-align: center; font-weight: 600; font-size: 14px; transition: all 0.2s; }
         .github-btn:hover { border-color: #ff693c; color: #ff693c; }
 
-        /* Automation Modal Tabs */
-        .platform-tabs { display: flex; gap: 5px; margin-bottom: 15px; }
-        .tab { flex: 1; background: #333; padding: 8px; font-size: 12px; text-align: center; cursor: pointer; border-radius: 6px; color: #888; transition: background 0.2s; }
-        .tab.active { background: #ff693c; color: white; }
-        .code-block { background: #000; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; color: #34c759; overflow-x: auto; white-space: pre; border: 1px solid #333; margin: 10px 0; text-align: left; }
-
         @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -350,7 +343,7 @@ HTML_DASHBOARD = """
         <span id="ruler"></span>
         <h1>The <span id="animated-title" onclick="replayAnimation()">Grid.</span></h1>
         <div class="subtitle-container">
-            <p class="subtitle" id="device-subtitle">Visualize your year.</p>
+            <p class="subtitle">Visualize your year.</p>
             <button class="info-btn" onclick="openModal()" title="What do the colors mean?">i</button>
         </div>
     </div>
@@ -397,7 +390,7 @@ HTML_DASHBOARD = """
 
             <h2>Dates of Importance</h2>
             <div id="date-list">
-            </div>
+                </div>
             <button class="btn-add" onclick="addDate()">+ Add another date</button>
 
             <h2>Theme</h2>
@@ -437,24 +430,19 @@ HTML_DASHBOARD = """
                 <img id="mockup-img" class="mockup-img" src="" alt="Preview">
             </div>
 
-            <div id="monitor-frame" class="monitor-mockup">
-                <img id="monitor-img" class="mockup-img" src="" alt="Preview">
-            </div>
-            <div id="monitor-stand" class="monitor-stand"></div>
-
             <div class="shortcut-section">
-                <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: #ccc;">Step 2: Automate it.</p>
+                <p style="margin: 0 0 10px 0; font-size: 0.9rem; color: #ccc;">Step 2: Install the Shortcut.</p>
                 <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: #888; line-height: 1.4;">
-                    We created scripts so you don't have to think.
+                    Since you probably need hand-holding: <strong>First add the shortcut, then click on the three dots (...) to edit it.</strong> Paste the URL where indicated. Don't mess it up.
                 </p>
-                <button onclick="openAutomationModal()" class="shortcut-btn">View Setup Instructions</button>
+                <a href="https://www.icloud.com/shortcuts/99a190f4001844f9ade585fc8eafd47e" class="shortcut-btn" target="_blank">Install iOS Shortcut</a>
             </div>
         </div>
     </div>
 
     <footer>
         &lt;/&gt; with ❤️ by Spandan.<br>
-        <span onclick="openReleaseModal()" class="footer-link">Version 4.0 Desktop Edition</span>
+        <span onclick="openReleaseModal()" class="footer-link">Version 3.1 Prod.</span>
         <div class="labs-product">An S² Labs Product 🥼</div>
     </footer>
 
@@ -485,54 +473,25 @@ HTML_DASHBOARD = """
 
     <div class="modal-overlay" id="releaseModalOverlay" onclick="closeReleaseModal(event)">
         <div class="modal">
-            <h3>Version 4.0 Notes</h3>
+            <h3>Version 3.1 Notes</h3>
             <ul class="release-list">
-                <li><strong>Desktop Support:</strong> We finally added landscape support (1920x1080) because apparently some of you still use computers.</li>
-                <li><strong>Smart Detection:</strong> The app now knows if you're on a phone or a laptop and adjusts the layout. Don't be scared.</li>
-                <li><strong>Horizontal Grid:</strong> For desktop users, the year is now a wide grid. It covers more screen real estate so you can see your wasted days in 4K.</li>
-                <li><strong>Automation Scripts:</strong> Added PowerShell (Windows) and Automator (Mac) instructions because we know you can't code.</li>
-                <li><strong>Layout Fixes:</strong> Fixed the Full Year view alignment. It used to look terrible. Now it looks slightly less terrible. Thanks to <a href="https://www.linkedin.com/in/kartikeya-srivastava-b527901a4/?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app" target="_blank" style="color: #ff693c; text-decoration: none;">Kartikey</a> for pointing out the UI inconsistency we were praying you wouldn't notice.</li>
                 <li><strong>Emoji Chooser:</strong> Because a colored dot wasn't "aesthetic" enough for your Instagram story. Send your "thanks" to <a href="https://www.instagram.com/im.amitpatwa" target="_blank" style="color: #ff693c; text-decoration: none;">Amit</a> for the extra bloat.</li>
-                <li><strong>Goldfish Memory Patch:</strong> We still remember your settings locally.</li>
+                <li><strong>We Killed the 'Year' Input:</strong> It's an annual calendar, Einstein. Stop trying to schedule things for 2027.</li>
+                <li><strong>Goldfish Memory Patch:</strong> The app now remembers your settings and dates locally. Because apparently, typing your own name more than once is too much to ask of you.</li>
+                <li><strong>Live Signature:</strong> Type your name. See it appear. It's not magic, it's JavaScript. Try not to be impressed.</li>
+                <li><strong>Weekend Highlight:</strong> Visual proof that you only live for 28% of your life.</li>
+                <li><strong>Smart Device Detection:</strong> We know what iPhone you have. If you have a Notch, we judge you. If you have an Island, we judge you harder.</li>
+                <li><strong>Segregated Months:</strong> A new view for those easily overwhelmed by 365 dots. Deep breaths.</li>
+                <li><strong>Layout Fixes:</strong> Fixed the Full Year view alignment. It used to look terrible. Now it looks slightly less terrible. Thanks to <a href="https://www.linkedin.com/in/kartikeya-srivastava-b527901a4/?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app" target="_blank" style="color: #ff693c; text-decoration: none;">Kartikey</a> for pointing out the UI inconsistency we were praying you wouldn't notice.</li>
             </ul>
             <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="github-btn">View Source on GitHub</a>
             <button class="close-modal" onclick="toggleReleaseModal(false)">Close</button>
         </div>
     </div>
 
-    <div class="modal-overlay" id="autoModalOverlay" onclick="closeAutoModal(event)">
-        <div class="modal" style="max-width: 500px;">
-            <h3>Automate Wallpaper</h3>
-            <div class="platform-tabs">
-                <div class="tab active" onclick="showTab('ios')" id="tab-ios">iOS</div>
-                <div class="tab" onclick="showTab('win')" id="tab-win">Windows</div>
-                <div class="tab" onclick="showTab('mac')" id="tab-mac">Mac</div>
-            </div>
-
-            <div id="content-ios">
-                <p style="font-size:0.9rem; color:#ccc;">Use the Shortcuts app.</p>
-                <p style="font-size:0.8rem; color:#888;">Add the shortcut, then edit it to paste your generated URL.</p>
-                <a href="https://www.icloud.com/shortcuts/99a190f4001844f9ade585fc8eafd47e" class="shortcut-btn" target="_blank" style="text-align:center; border:1px solid #ccc;">Install iOS Shortcut</a>
-            </div>
-
-            <div id="content-win" style="display:none">
-                <p style="font-size:0.9rem; color:#ccc;">1. Open <strong>Task Scheduler</strong>.<br>2. Create Basic Task (Daily).<br>3. Action: "Start a Program".<br>4. Program: <code>powershell.exe</code><br>5. Add Arguments (Paste this):</p>
-                <div class="code-block" id="win-code"></div>
-                <p style="font-size:0.8rem; color:#666;">Note: This replaces 'C:\wallpaper.png' automatically.</p>
-            </div>
-
-            <div id="content-mac" style="display:none">
-                <p style="font-size:0.9rem; color:#ccc;">1. Open <strong>Automator</strong> -> Application.<br>2. Add action: <strong>"Get Specified URLs"</strong> (Paste your link).<br>3. Add action: <strong>"Download URLs"</strong>.<br>4. Add action: <strong>"Set Desktop Picture"</strong>.<br>5. Save as App & Add to Login Items.</p>
-            </div>
-            
-            <button class="close-modal" onclick="toggleAutoModal(false)">Got it</button>
-        </div>
-    </div>
-
     <script>
         const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-        let currentPlatform = 'mobile'; // 'mobile' | 'desktop'
-
+        
         function getMonthOptionsHtml(selected) {
             let html = '<option value="" disabled ' + (!selected ? 'selected' : '') + '>Month</option>';
             MONTHS.forEach((m, i) => {
@@ -574,6 +533,7 @@ HTML_DASHBOARD = """
                 dates: []
             };
             
+            // Collect Dates
             const rows = document.querySelectorAll('.date-row');
             rows.forEach(row => {
                 const m = row.querySelector('.month-select').value;
@@ -584,11 +544,11 @@ HTML_DASHBOARD = """
                 }
             });
             
-            localStorage.setItem('grid_prefs_v4', JSON.stringify(prefs));
+            localStorage.setItem('grid_prefs_v3', JSON.stringify(prefs));
         }
 
         function loadPreferences() {
-            const stored = localStorage.getItem('grid_prefs_v4');
+            const stored = localStorage.getItem('grid_prefs_v3');
             if (!stored) {
                 addDate(); // Default empty row
                 return;
@@ -596,14 +556,17 @@ HTML_DASHBOARD = """
 
             try {
                 const prefs = JSON.parse(stored);
+                
+                // Set Fields
                 if(prefs.viewMode) document.getElementById('view-mode').value = prefs.viewMode;
                 if(prefs.barStyle) document.getElementById('bar-style').value = prefs.barStyle;
                 if(prefs.highlightWeekends !== undefined) document.getElementById('weekend-toggle').checked = prefs.highlightWeekends;
                 if(prefs.theme) setTheme(prefs.theme);
                 if(prefs.signature) document.getElementById('signature').value = prefs.signature;
 
+                // Rebuild Dates
                 const container = document.getElementById('date-list');
-                container.innerHTML = ''; 
+                container.innerHTML = ''; // Clear existing
                 
                 if (prefs.dates && prefs.dates.length > 0) {
                     prefs.dates.forEach(d => {
@@ -621,42 +584,28 @@ HTML_DASHBOARD = """
 
         // --- DEVICE DETECTION LOGIC ---
         function detectDeviceType() {
-            const userAgent = navigator.userAgent.toLowerCase();
-            const isMobile = /iphone|ipad|ipod|android/i.test(userAgent);
+            // Check logical screen width to guess device family
+            const width = window.screen.width;
             const frame = document.getElementById('phone-frame');
-            const monitorFrame = document.getElementById('monitor-frame');
-            const monitorStand = document.getElementById('monitor-stand');
             
-            if (!isMobile) {
-                currentPlatform = 'desktop';
-                document.getElementById('device-subtitle').innerText = "Visualize your year (Desktop Mode).";
-                
-                // Switch Mockups
-                frame.style.display = 'none';
-                monitorFrame.style.display = 'block';
-                monitorStand.style.display = 'block';
+            let deviceType = 'dynamic-island'; // Default
 
-                // Default Automation Tab to Windows or Mac
-                const isMac = userAgent.includes('mac');
-                showTab(isMac ? 'mac' : 'win');
+            // Heuristic based on logical width
+            // 393/430 = Dynamic Island (14 Pro, 15, 16)
+            // 390/428/375/414 = Notch (12, 13, 14, 11, X)
+            if (width === 393 || width === 430) {
+                deviceType = 'dynamic-island';
+            } else if (width === 390 || width === 428 || width === 375 || width === 414) {
+                deviceType = 'notch';
+            }
+
+            // Apply directly
+            if (deviceType === 'notch') {
+                frame.classList.remove('dynamic-island');
+                frame.classList.add('notch');
             } else {
-                currentPlatform = 'mobile';
-                document.getElementById('device-subtitle').innerText = "Visualize your year (Mobile Mode).";
-                
-                // Mobile specific notch detection
-                const width = window.screen.width;
-                let notchType = 'dynamic-island';
-                if (width === 390 || width === 428 || width === 375 || width === 414) {
-                    notchType = 'notch';
-                }
-                
-                if (notchType === 'notch') {
-                    frame.classList.remove('dynamic-island');
-                    frame.classList.add('notch');
-                } else {
-                    frame.classList.remove('notch');
-                    frame.classList.add('dynamic-island');
-                }
+                frame.classList.remove('notch');
+                frame.classList.add('dynamic-island');
             }
         }
 
@@ -711,15 +660,31 @@ HTML_DASHBOARD = """
         function replayAnimation() { animateTitle(); }
 
         window.onload = function() {
+            const isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
+            
+            // 1. Load Saved Data
             loadPreferences();
+            
+            // 2. Detect Device Type and set Preview
             detectDeviceType();
             
+            // 3. Init Title Width & Animation
             const el = document.getElementById('animated-title');
             const ruler = document.getElementById('ruler');
             ruler.innerText = "Grid.";
             el.style.width = ruler.offsetWidth + 'px';
             
             setTimeout(animateTitle, 2000);
+
+            if (!isApple) {
+                const btn = document.getElementById('default-btn');
+                btn.innerText = "Sorry, currently available only on iOS / iPadOS";
+                btn.disabled = true;
+                document.querySelector('.separator').style.display = 'none';
+                document.querySelector('.customise-trigger').style.display = 'none';
+                document.getElementById('custom-section').style.display = 'none';
+                document.querySelector('footer').style.marginTop = 'auto';
+            }
         };
 
         let selectedTheme = 'dark';
@@ -735,7 +700,7 @@ HTML_DASHBOARD = """
             }
         }
 
-        // --- MODAL LOGIC ---
+        // --- LEGEND MODAL ---
         function openModal() { toggleModal(true); }
         function closeModal(e) { if(e.target === document.getElementById('modalOverlay')) toggleModal(false); }
         function toggleModal(show) {
@@ -753,6 +718,7 @@ HTML_DASHBOARD = """
             }
         }
 
+        // --- RELEASE NOTES MODAL ---
         function openReleaseModal() { toggleReleaseModal(true); }
         function closeReleaseModal(e) { if(e.target === document.getElementById('releaseModalOverlay')) toggleReleaseModal(false); }
         function toggleReleaseModal(show) {
@@ -768,27 +734,6 @@ HTML_DASHBOARD = """
                 modal.style.transform = 'scale(0.9)';
                 setTimeout(() => { overlay.style.display = 'none'; }, 300);
             }
-        }
-
-        function openAutomationModal() { toggleAutoModal(true); }
-        function closeAutoModal(e) { if(e.target === document.getElementById('autoModalOverlay')) toggleAutoModal(false); }
-        function toggleAutoModal(show) {
-            const overlay = document.getElementById('autoModalOverlay');
-            if (show) {
-                overlay.style.display = 'flex';
-                void overlay.offsetWidth;
-                overlay.style.opacity = '1';
-            } else {
-                overlay.style.opacity = '0';
-                setTimeout(() => { overlay.style.display = 'none'; }, 300);
-            }
-        }
-
-        function showTab(t) {
-            ['ios','win','mac'].forEach(x => {
-                document.getElementById(`content-${x}`).style.display = x===t ? 'block' : 'none';
-                document.getElementById(`tab-${x}`).className = x===t ? 'tab active' : 'tab';
-            });
         }
 
         function addDate(selM, selD, selE) {
@@ -823,11 +768,7 @@ HTML_DASHBOARD = """
 
         function generateDefault() {
             const baseUrl = window.location.origin + "/api/image";
-            const params = new URLSearchParams();
-            params.append('theme', 'dark');
-            params.append('platform', currentPlatform);
-            const fullUrl = baseUrl + "?" + params.toString();
-            
+            const fullUrl = baseUrl + "?theme=dark";
             const btn = document.getElementById('default-btn');
             
             navigator.clipboard.writeText(fullUrl).then(() => {
@@ -842,7 +783,9 @@ HTML_DASHBOARD = """
                 document.getElementById('custom-url-display').style.display = "none";
                 document.getElementById('custom-section').style.display = "none";
                 
-                updatePreview(fullUrl);
+                // Show Mockup even for default
+                document.getElementById('mockup-img').src = fullUrl;
+                
                 document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
 
                 setTimeout(() => { 
@@ -856,6 +799,7 @@ HTML_DASHBOARD = """
         }
 
         function generateCustom() {
+            // 1. Save State
             savePreferences();
 
             const rows = document.querySelectorAll('.date-row');
@@ -869,8 +813,11 @@ HTML_DASHBOARD = """
                 if (month && day) {
                     const mStr = month.toString().padStart(2, '0');
                     const dStr = day.toString().padStart(2, '0');
+                    
                     let entry = `${mStr}-${dStr}`;
-                    if (emoji) entry += `|${emoji}`;
+                    if (emoji) {
+                        entry += `|${emoji}`;
+                    }
                     dateEntries.push(entry);
                 }
             });
@@ -891,14 +838,12 @@ HTML_DASHBOARD = """
             if (mode !== 'year') params.append('mode', mode);
             if (barStyle !== 'segmented') params.append('bar_style', barStyle);
             if (highlightWeekends) params.append('highlight_weekends', 'true');
-            params.append('platform', currentPlatform);
             
             const fullUrl = baseUrl + "?" + params.toString();
-            
-            // Check if user changed anything
             const isDefault = dateEntries.length === 0 && selectedTheme === 'dark' && sig === '' && mode === 'year' && barStyle === 'segmented' && !highlightWeekends;
 
-            updatePreview(fullUrl);
+            // Set Mockup Image
+            document.getElementById('mockup-img').src = fullUrl;
 
             if (isDefault) {
                 navigator.clipboard.writeText(fullUrl).then(() => {
@@ -915,17 +860,6 @@ HTML_DASHBOARD = """
                 document.getElementById('mock-msg').style.display = "none";
                 document.getElementById('custom-url-display').style.display = "block";
                 document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
-            }
-        }
-
-        function updatePreview(url) {
-            if (currentPlatform === 'desktop') {
-                document.getElementById('monitor-img').src = url;
-                // Generate PowerShell Snippet
-                const psCode = `Invoke-WebRequest -Uri "${url}" -OutFile "C:\\wallpaper.png"\nSet-ItemProperty -Path "HKCU:\\Control Panel\\Desktop" -Name Wallpaper -Value "C:\\wallpaper.png"\nRUNDLL32.EXE user32.dll,UpdatePerUserSystemParameters`;
-                document.getElementById('win-code').innerText = psCode;
-            } else {
-                document.getElementById('mockup-img').src = url;
             }
         }
 
@@ -948,6 +882,7 @@ HTML_DASHBOARD = """
 def home():
     return HTML_DASHBOARD
 
+# --- NEW: SERVE FONTS TO FRONTEND ---
 @app.route('/fonts/<path:filename>')
 def serve_fonts(filename):
     return send_from_directory(FONT_DIR, filename)
@@ -961,23 +896,16 @@ def generate_grid():
     mode_param = request.args.get('mode', 'year')
     bar_style_param = request.args.get('bar_style', 'segmented')
     highlight_weekends_param = request.args.get('highlight_weekends', 'false') == 'true'
-    platform_param = request.args.get('platform', 'mobile') # 'mobile' or 'desktop'
 
-    # 2. Config based on Platform
-    is_desktop = platform_param == 'desktop'
-    
-    IMG_W = DESKTOP_WIDTH if is_desktop else MOBILE_WIDTH
-    IMG_H = DESKTOP_HEIGHT if is_desktop else MOBILE_HEIGHT
-    
-    # 3. Select Theme Colors
+    # 2. Select Theme Colors
     palette = THEMES.get(theme_param, THEMES['dark'])
     
-    # 4. Setup Time (IST)
+    # 3. Setup Time (IST)
     ist_offset = datetime.timedelta(hours=5, minutes=30)
     now = datetime.datetime.now(datetime.timezone.utc) + ist_offset
     current_year = now.year
 
-    # 5. Parse Special Dates & Emojis
+    # 4. Parse Special Dates & Emojis early
     special_dates = {}
     if dates_param:
         items = dates_param.split(',')
@@ -996,8 +924,8 @@ def generate_grid():
                     except ValueError: pass
             except ValueError: pass
 
-    # 6. Initialize Image
-    img = Image.new('RGB', (IMG_W, IMG_H), color=palette['BG'])
+    # 5. Determine Grid Dimensions & Range (Shared)
+    img = Image.new('RGB', (IMAGE_WIDTH, IMAGE_HEIGHT), color=palette['BG'])
     draw = ImageDraw.Draw(img)
     
     # Fonts
@@ -1011,58 +939,68 @@ def generate_grid():
     except:
         font_signature = font_small
 
-    # Calculate global days (Shared)
+    # Calculate global days left (common for all modes)
     start_date_global = datetime.date(current_year, 1, 1)
     end_date_global = datetime.date(current_year, 12, 31)
     total_days_global = (end_date_global - start_date_global).days + 1
     days_passed_global = (now.date() - start_date_global).days + 1
-    days_passed_global = max(0, min(days_passed_global, total_days_global))
+    if days_passed_global < 0: days_passed_global = 0
+    if days_passed_global > total_days_global: days_passed_global = total_days_global
     days_left = total_days_global - days_passed_global
 
     # --- MODE SPECIFIC LOGIC ---
     if mode_param == 'segregated_months':
-        # --- SEGREGATED MODE ---
-        if is_desktop:
-            # Desktop Layout: 6 cols x 2 rows
-            COLS = 6
-            ROWS = 2
-            START_Y_GLOBAL = 200
-            ROW_HEIGHT_STEP = 340
-            GAP_X = 100
-        else:
-            # Mobile Layout: 3 cols x 4 rows
-            COLS = 3
-            ROWS = 4
-            START_Y_GLOBAL = 750
-            ROW_HEIGHT_STEP = 340
-            GAP_X = 150
-            
+        # --- NEW YEAR CALENDAR MODE (12 Month Grid) ---
+        
+        # Grid Configuration for 12 months
+        COLS = 3
+        ROWS = 4
+        
+        # Visual config for mini-grids
         MONTH_DOT_RADIUS = 12
         MONTH_DOT_PADDING = 10
-        MINI_GRID_COLS = 7
+        MINI_GRID_COLS = 7 # 7 days wide
         
+        # Calculate width of one month block
+        # Width = (12*2 * 7) + (10 * 6) = 168 + 60 = 228 px
         BLOCK_WIDTH = (MONTH_DOT_RADIUS * 2 * MINI_GRID_COLS) + (MONTH_DOT_PADDING * (MINI_GRID_COLS - 1))
-        TOTAL_CONTENT_WIDTH = (COLS * BLOCK_WIDTH) + ((COLS - 1) * GAP_X)
-        START_X_GLOBAL = (IMG_W - TOTAL_CONTENT_WIDTH) // 2
+        
+        # Calculate margins
+        # Total content width = 3 * BLOCK_WIDTH + 2 * GAP
+        BLOCK_GAP_X = 150
+        TOTAL_CONTENT_WIDTH = (COLS * BLOCK_WIDTH) + ((COLS - 1) * BLOCK_GAP_X)
+        START_X_GLOBAL = (IMAGE_WIDTH - TOTAL_CONTENT_WIDTH) // 2
+        
+        # Vertical Tuning (User Request)
+        # Previous START_Y_GLOBAL was 350 (too high)
+        START_Y_GLOBAL = 750 # Lowered to clear the clock area
+        
+        # Previous row step was 400 (too gapped)
+        ROW_HEIGHT_STEP = 340 # Tightened vertical spacing
         
         month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
         
-        for m in range(1, 13):
+        current_iter_date = datetime.date(current_year, 1, 1)
+        
+        for m in range(1, 13): # 1 to 12
+            # Find grid position (0-2 col, 0-3 row)
             idx = m - 1
             row_idx = idx // COLS
             col_idx = idx % COLS
             
-            month_start_x = START_X_GLOBAL + col_idx * (BLOCK_WIDTH + GAP_X)
-            month_start_y = START_Y_GLOBAL + row_idx * ROW_HEIGHT_STEP 
+            month_start_x = START_X_GLOBAL + col_idx * (BLOCK_WIDTH + BLOCK_GAP_X)
+            month_start_y = START_Y_GLOBAL + row_idx * (ROW_HEIGHT_STEP) 
             
+            # Draw Month Name
             draw.text((month_start_x, month_start_y - 60), month_names[idx], font=font_small, fill=palette['INACTIVE'])
             
+            # Draw Days for this month
             days_in_month = calendar.monthrange(current_year, m)[1]
             
             for d in range(1, days_in_month + 1):
                 current_day_date = datetime.date(current_year, m, d)
                 
-                # Colors
+                # Determine Color
                 draw_color = palette['INACTIVE']
                 if highlight_weekends_param and current_day_date.weekday() >= 5:
                     draw_color = palette['WEEKEND']
@@ -1081,6 +1019,7 @@ def generate_grid():
                 elif current_day_date < now.date():
                     draw_color = palette['PASSED']
 
+                # Calc dot position inside block (Row-major, 7 cols wide)
                 d_idx = d - 1
                 dot_row = d_idx // MINI_GRID_COLS
                 dot_col = d_idx % MINI_GRID_COLS
@@ -1095,27 +1034,16 @@ def generate_grid():
                 else:
                     draw.ellipse((x, y, x + MONTH_DOT_RADIUS * 2, y + MONTH_DOT_RADIUS * 2), fill=draw_color)
         
-        grid_bottom_y = START_Y_GLOBAL + (ROWS * ROW_HEIGHT_STEP) + (50 if is_desktop else 220)
+        # Determine text Y for footer elements relative to the last row
+        grid_bottom_y = START_Y_GLOBAL + (3 * ROW_HEIGHT_STEP) + 220
 
     else:
         # --- ORIGINAL MODES (Year, Quarter, Month, Fortnight) ---
+        grid_cols = GRID_COLS
+        grid_rows = GRID_ROWS
+        dot_radius = DOT_RADIUS
+        dot_spacing = DOT_PADDING
         
-        # Dimensions Defaults
-        if is_desktop:
-            # Desktop Defaults
-            if mode_param == 'year':
-                # Desktop Year Grid (Horizontal 32x12 approximately)
-                grid_cols, grid_rows = 32, 12
-                dot_radius, dot_spacing = 15, 15
-            else:
-                grid_cols, grid_rows = GRID_COLS_MOBILE, GRID_ROWS_MOBILE
-                dot_radius, dot_spacing = DOT_RADIUS, DOT_PADDING
-        else:
-            # Mobile Defaults
-            grid_cols, grid_rows = GRID_COLS_MOBILE, GRID_ROWS_MOBILE
-            dot_radius, dot_spacing = DOT_RADIUS, DOT_PADDING
-        
-        # Mode Overrides
         if mode_param == 'month':
             start_date = datetime.date(current_year, now.month, 1)
             last_day = calendar.monthrange(current_year, now.month)[1]
@@ -1151,30 +1079,30 @@ def generate_grid():
         else: # Year (Default Single Grid)
             start_date = datetime.date(current_year, 1, 1)
             end_date = datetime.date(current_year, 12, 31)
+            days_left_mode = days_left
             range_text = "year"
         
-        # Common Draw Loop
-        total_grid_w = (grid_cols * (dot_radius * 2)) + ((grid_cols - 1) * dot_spacing)
-        total_grid_h = (grid_rows * (dot_radius * 2)) + ((grid_rows - 1) * dot_spacing)
+        # Common Draw Loop for these modes
+        DOT_SPACING = dot_spacing
+        total_grid_w = (grid_cols * (dot_radius * 2)) + ((grid_cols - 1) * DOT_SPACING)
+        total_grid_h = (grid_rows * (dot_radius * 2)) + ((grid_rows - 1) * DOT_SPACING)
         
-        start_x = (IMG_W - total_grid_w) // 2
+        start_x = (IMAGE_WIDTH - total_grid_w) // 2
         
-        if is_desktop:
-            # Desktop Vertical Center
-            start_y = (IMG_H - total_grid_h) // 2 - 50 
+        if mode_param == 'year':
+            start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2) + 150 
         else:
-            # Mobile Vertical Center (biased to bottom)
-            if mode_param == 'year':
-                start_y = (IMG_H // 2) - (total_grid_h // 2) + 150 
-            else:
-                start_y = (IMG_H // 2) - (total_grid_h // 2)
+            start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2)
         
+        if start_y < 200: start_y = 200
+
         current_iter_date = start_date
         
         for row in range(grid_rows):
             for col in range(grid_cols):
                 if current_iter_date > end_date: break
                 
+                # Color Logic
                 draw_color = palette['INACTIVE']
                 if highlight_weekends_param and current_iter_date.weekday() >= 5:
                     draw_color = palette['WEEKEND']
@@ -1192,8 +1120,8 @@ def generate_grid():
                 elif current_iter_date < now.date():
                     draw_color = palette['PASSED']
 
-                x = int(start_x + col * (dot_radius * 2 + dot_spacing))
-                y = int(start_y + row * (dot_radius * 2 + dot_spacing))
+                x = int(start_x + col * (dot_radius * 2 + DOT_SPACING))
+                y = int(start_y + row * (dot_radius * 2 + DOT_SPACING))
 
                 if draw_emoji_img:
                     target_size = (dot_radius * 2, dot_radius * 2)
@@ -1207,17 +1135,20 @@ def generate_grid():
         grid_bottom_y = start_y + total_grid_h
 
     # --- Draw Bottom Info (Common) ---
+    # Recalculate range text for specific modes if needed, but 'year' is default fallback
     range_text_final = "year"
     if mode_param == 'month': range_text_final = now.strftime("%b")
     elif mode_param == 'quarter': range_text_final = f"Q{(now.month-1)//3 + 1}"
     elif mode_param == 'fortnight': range_text_final = "period"
     
-    # Calculate progress for bar
+    # Use global stats for Year modes
     if mode_param in ['year', 'segregated_months']:
         bottom_text = f"{days_left}d left in year"
         progress_ratio = days_passed_global / total_days_global if total_days_global > 0 else 0
     else:
-        # Re-calc local days for progress bar
+        # Use local stats calculated in the else block above? 
+        # Actually easier to re-calc local range here if needed or just use passed vars
+        # For simplicity, let's just re-calc local days for progress bar
         if mode_param == 'month':
             s = datetime.date(current_year, now.month, 1)
             e = datetime.date(current_year, now.month, calendar.monthrange(current_year, now.month)[1])
@@ -1229,22 +1160,23 @@ def generate_grid():
             s = now.date() - datetime.timedelta(days=now.weekday())
             e = s + datetime.timedelta(days=13)
         
-        t = (e - s).days + 1
-        p = (now.date() - s).days + 1
-        if p < 0: p = 0
-        if p > t: p = t
-        bottom_text = f"{t-p}d left in {range_text_final}"
-        progress_ratio = p / t if t > 0 else 0
+        if mode_param not in ['year', 'segregated_months']:
+            t = (e - s).days + 1
+            p = (now.date() - s).days + 1
+            if p < 0: p = 0
+            if p > t: p = t
+            bottom_text = f"{t-p}d left in {range_text_final}"
+            progress_ratio = p / t if t > 0 else 0
 
     bbox_text = draw.textbbox((0, 0), bottom_text, font=font_small)
     text_width = bbox_text[2] - bbox_text[0]
-    text_x = (IMG_W - text_width) / 2
-    text_y = grid_bottom_y + (60 if is_desktop else 80)
+    text_x = (IMAGE_WIDTH - text_width) / 2
+    text_y = grid_bottom_y + 80
     draw.text((text_x, text_y), bottom_text, font=font_small, fill=palette['ACTIVE'])
 
     # --- Draw Progress Bar ---
-    BAR_TOTAL_WIDTH = 800 if is_desktop else 600
-    bar_start_x = (IMG_W - BAR_TOTAL_WIDTH) / 2
+    BAR_TOTAL_WIDTH = 600
+    bar_start_x = (IMAGE_WIDTH - BAR_TOTAL_WIDTH) / 2
     bar_start_y = text_y + 60 
 
     if bar_style_param == 'solid':
@@ -1260,12 +1192,12 @@ def generate_grid():
         if fill_width > 0:
             draw.rounded_rectangle((bar_start_x, bar_start_y, bar_start_x + fill_width, bar_start_y + BAR_HEIGHT), radius=3, fill=palette['ACTIVE'])
     else:
-        # Segmented
         BAR_HEIGHT = 20
-        BAR_BLOCKS = 20 if is_desktop else 10
-        BLOCK_GAP = 10 if is_desktop else 12
+        BAR_BLOCKS = 10
+        BLOCK_GAP = 12
         single_block_width = (BAR_TOTAL_WIDTH - ((BAR_BLOCKS - 1) * BLOCK_GAP)) / BAR_BLOCKS
         filled_blocks = int(progress_ratio * BAR_BLOCKS)
+        # Ensure at least one block is filled if any time passed
         if progress_ratio > 0 and filled_blocks == 0: filled_blocks = 1
         
         for i in range(BAR_BLOCKS):
@@ -1280,12 +1212,12 @@ def generate_grid():
     if signature_param:
         bbox_sig = draw.textbbox((0, 0), signature_param, font=font_signature)
         sig_width = bbox_sig[2] - bbox_sig[0]
-        sig_x = (IMG_W - sig_width) / 2
+        sig_x = (IMAGE_WIDTH - sig_width) / 2
         
         # Calculate specific signature gap
         sig_gap = 120
         if mode_param == 'segregated_months':
-            sig_gap = 200 
+            sig_gap = 200 # Push it lower specifically for this mode
             
         sig_y = bar_start_y + BAR_HEIGHT + sig_gap
         draw.text((sig_x, sig_y), signature_param, font=font_signature, fill=palette['TEXT'])
@@ -1294,6 +1226,3 @@ def generate_grid():
     img.save(img_io, 'PNG')
     img_io.seek(0)
     return send_file(img_io, mimetype='image/png')
-
-if __name__ == '__main__':
-    app.run(debug=True)
