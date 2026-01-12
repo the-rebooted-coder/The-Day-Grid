@@ -114,17 +114,36 @@ HTML_DASHBOARD = """
         
         /* Title Animation CSS */
         #animated-title {
-            transition: opacity 0.25s ease-in-out; /* Faster Fade */
+            /* Smooth width transition handles the sliding of "The" */
+            transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.2s ease-in-out;
             opacity: 1;
-            display: inline-block;
-            cursor: pointer; /* Indicates clickability */
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            vertical-align: middle;
+            overflow: hidden;
+            white-space: nowrap;
+            height: 40px; /* Fixed height to prevent vertical jitter */
+            cursor: pointer;
         }
+        
+        /* Hidden Ruler for measuring text width */
+        #ruler {
+            visibility: hidden;
+            position: absolute;
+            white-space: nowrap;
+            font-weight: 900;
+            font-size: 2.5rem; 
+            letter-spacing: -1px;
+            pointer-events: none;
+        }
+
         .title-dot {
-            width: 28px; /* Increased Size */
+            width: 28px; 
             height: 28px;
             border-radius: 50%;
             display: inline-block;
-            vertical-align: middle;
+            flex-shrink: 0;
         }
         
         .subtitle-container { display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -240,6 +259,7 @@ HTML_DASHBOARD = """
 </head>
 <body>
     <div class="header-section">
+        <span id="ruler"></span>
         <h1>The <span id="animated-title" onclick="replayAnimation()">Grid.</span></h1>
         <div class="subtitle-container">
             <p class="subtitle">Visualize your year.</p>
@@ -393,48 +413,55 @@ HTML_DASHBOARD = """
             isAnimating = true;
 
             const el = document.getElementById('animated-title');
+            const ruler = document.getElementById('ruler');
             
             // Sequence: White -> Orange -> Gray -> Text (Stops)
-            // Faster Timings: 700ms pause, 250ms fade
             const seq = [
                 { type: 'html', content: '<span class="dot white title-dot"></span>', time: 700 },
                 { type: 'html', content: '<span class="dot orange title-dot"></span>', time: 700 },
                 { type: 'html', content: '<span class="dot gray title-dot"></span>', time: 700 },
-                { type: 'text', content: 'Grid.', time: 0 } // Stop
+                { type: 'text', content: 'Grid.', time: 0 } 
             ];
             
             let i = 0;
             
             function step() {
-                // 1. Fade Out
+                // 1. Measure Width of Next Content using Ruler
+                const item = seq[i];
+                if (item.type === 'text') ruler.innerText = item.content;
+                else ruler.innerHTML = item.content;
+                
+                const newWidth = ruler.offsetWidth;
+
+                // 2. Fade Out
                 el.style.opacity = 0;
                 
                 setTimeout(() => {
-                    // 2. Change Content
-                    const item = seq[i];
+                    // 3. Set Width (Triggers Smooth Slide) & Change Content
+                    el.style.width = newWidth + 'px';
+                    
                     if (item.type === 'text') el.innerText = item.content;
                     else el.innerHTML = item.content;
                     
-                    // 3. Fade In
+                    // 4. Fade In
                     el.style.opacity = 1;
                     
-                    // 4. Next Step
+                    // 5. Next Step
                     i++;
                     if (i < seq.length) {
                         setTimeout(step, item.time);
                     } else {
-                        // Done
                         isAnimating = false;
+                        // Keep width explicit or reset to auto if needed (keeping explicit prevents jump)
                     }
                     
-                }, 250); // 250ms fade
+                }, 200); // Wait for opacity fade out
             }
             
             // Start the sequence
             step();
         }
         
-        // Wrapper to trigger animation logic (only logic, not click event)
         function replayAnimation() {
             animateTitle();
         }
@@ -445,7 +472,13 @@ HTML_DASHBOARD = """
             // Initial Date Row
             addDate();
             
-            // Start Animation automatically after slight delay
+            // Initialize width of the text so the first shrinkage is smooth
+            const el = document.getElementById('animated-title');
+            const ruler = document.getElementById('ruler');
+            ruler.innerText = "Grid.";
+            el.style.width = ruler.offsetWidth + 'px';
+            
+            // Start Animation
             setTimeout(animateTitle, 2000);
 
             if (!isApple) {
