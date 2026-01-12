@@ -44,7 +44,6 @@ FONT_PATH = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
 FONT_SIGNATURE_PATH = os.path.join(FONT_DIR, 'Buffalo.otf')
 
 # --- Helper: Fetch Emoji Image ---
-# In-memory cache to prevent re-downloading the same emoji 50 times in one request
 emoji_cache = {}
 
 def get_emoji_image(emoji_char):
@@ -54,7 +53,6 @@ def get_emoji_image(emoji_char):
     
     try:
         # Get hex codepoint (e.g. 🍰 -> 1f382)
-        # We strip variant selectors to match Twemoji filenames
         codepoint = "-".join([f"{ord(c):x}" for c in emoji_char if ord(c) != 0xfe0f])
         
         url = f"https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/{codepoint}.png"
@@ -133,20 +131,30 @@ HTML_DASHBOARD = """
         h2 { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #666; margin: 0 0 10px 0; }
 
         #date-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 15px; }
-        .date-row { display: flex; gap: 10px; align-items: center; }
+        .date-row { display: flex; gap: 8px; align-items: center; }
         
-        input[type="date"], input[type="text"], select { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; color-scheme: dark; width: 100%; box-sizing: border-box; }
-        input[type="date"]:focus, input[type="text"]:focus, select:focus { border-color: #ff693c; }
+        /* New Date Select Styles */
+        .date-picker-group { display: flex; flex-grow: 1; gap: 5px; }
         
+        select { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; color-scheme: dark; box-sizing: border-box; }
+        select:focus, input[type="text"]:focus { border-color: #ff693c; }
+
+        /* Month takes more space, Day takes less */
+        .month-select { flex: 2; }
+        .day-select { flex: 1; }
+
         .emoji-select {
             flex-grow: 0 !important;
-            width: 70px !important;
+            width: 60px !important;
             text-align: center;
             font-size: 18px !important;
             appearance: none;
             -webkit-appearance: none;
             cursor: pointer;
+            padding: 10px 0;
         }
+
+        input[type="text"] { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; width: 100%; box-sizing: border-box; }
 
         .btn-icon { background: #333; border: 1px solid #444; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 18px; flex-shrink: 0; }
         .btn-icon:hover { background: #444; }
@@ -217,7 +225,7 @@ HTML_DASHBOARD = """
         <div id="custom-section">
             <h2>View Mode</h2>
             <div style="margin-bottom: 20px;">
-                <select id="view-mode">
+                <select id="view-mode" style="width: 100%">
                     <option value="year">Full Year (Default)</option>
                     <option value="quarter">Current Quarter</option>
                     <option value="month">Current Month</option>
@@ -227,7 +235,7 @@ HTML_DASHBOARD = """
 
             <h2>Progress Bar Style</h2>
             <div style="margin-bottom: 20px;">
-                <select id="bar-style">
+                <select id="bar-style" style="width: 100%">
                     <option value="segmented">Segmented (Default)</option>
                     <option value="solid">Solid</option>
                     <option value="minimal">Minimal</option>
@@ -236,21 +244,7 @@ HTML_DASHBOARD = """
 
             <h2>Dates of Importance</h2>
             <div id="date-list">
-                <div class="date-row">
-                    <input type="date" class="date-input">
-                    <select class="emoji-select">
-                        <option value="">🟡</option>
-                        <option value="🍰">🍰</option>
-                        <option value="❤️">❤️</option>
-                        <option value="🚀">🚀</option>
-                        <option value="💰">💰</option>
-                        <option value="✈️">✈️</option>
-                        <option value="💀">💀</option>
-                        <option value="🍺">🍺</option>
-                    </select>
-                    <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
                 </div>
-            </div>
             <button class="btn-add" onclick="addDate()">+ Add another date</button>
 
             <h2>Theme</h2>
@@ -327,9 +321,40 @@ HTML_DASHBOARD = """
     </div>
 
     <script>
+        // --- Helper to build Month/Day Options ---
+        const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        
+        function getMonthOptionsHtml() {
+            let html = '<option value="" disabled selected>Month</option>';
+            MONTHS.forEach((m, i) => {
+                html += `<option value="${i + 1}">${m}</option>`;
+            });
+            return html;
+        }
+
+        function getDayOptionsHtml() {
+            let html = '<option value="" disabled selected>Day</option>';
+            for (let i = 1; i <= 31; i++) {
+                html += `<option value="${i}">${i}</option>`;
+            }
+            return html;
+        }
+
+        function getEmojiOptionsHtml() {
+            const emojis = ["🟡", "🍰", "❤️", "🚀", "💰", "✈️", "💀", "🍺"];
+            let html = "";
+            emojis.forEach(e => {
+                html += `<option value="${e === '🟡' ? '' : e}">${e}</option>`;
+            });
+            return html;
+        }
+
         window.onload = function() {
             const isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
             
+            // Initial Date Row
+            addDate();
+
             if (!isApple) {
                 const btn = document.getElementById('default-btn');
                 btn.innerText = "Sorry, currently available only on iOS / iPadOS";
@@ -378,27 +403,23 @@ HTML_DASHBOARD = """
             const div = document.createElement('div');
             div.className = 'date-row';
             div.innerHTML = `
-                <input type="date" class="date-input">
-                <select class="emoji-select">
-                    <option value="">🟡</option>
-                    <option value="🍰">🍰</option>
-                    <option value="❤️">❤️</option>
-                    <option value="🚀">🚀</option>
-                    <option value="💰">💰</option>
-                    <option value="✈️">✈️</option>
-                    <option value="💀">💀</option>
-                    <option value="🍺">🍺</option>
-                </select>
+                <div class="date-picker-group">
+                    <select class="month-select">${getMonthOptionsHtml()}</select>
+                    <select class="day-select">${getDayOptionsHtml()}</select>
+                </div>
+                <select class="emoji-select">${getEmojiOptionsHtml()}</select>
                 <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
             `;
             container.appendChild(div);
         }
+
         function removeDate(btn) {
             const container = document.getElementById('date-list');
             if (container.children.length > 1) btn.parentElement.remove();
             else {
-                const inputs = btn.parentElement.querySelectorAll('input, select');
-                inputs.forEach(i => i.value = '');
+                // Reset inputs if it's the last row
+                const selects = btn.parentElement.querySelectorAll('select');
+                selects.forEach(s => s.selectedIndex = 0);
             }
         }
 
@@ -443,18 +464,21 @@ HTML_DASHBOARD = """
             let dateEntries = [];
             
             rows.forEach(row => {
-                const dateInput = row.querySelector('.date-input');
-                const emojiSelect = row.querySelector('.emoji-select');
+                const month = row.querySelector('.month-select').value;
+                const day = row.querySelector('.day-select').value;
+                const emoji = row.querySelector('.emoji-select').value;
                 
-                if (dateInput.value) {
-                    const parts = dateInput.value.split('-'); 
-                    if (parts.length === 3) {
-                        let entry = `${parts[1]}-${parts[2]}`;
-                        if (emojiSelect && emojiSelect.value) {
-                            entry += `|${emojiSelect.value}`;
-                        }
-                        dateEntries.push(entry);
+                if (month && day) {
+                    // Format needs to be MM-DD
+                    // Pad with zero if needed (though values in html should handle it, explicit safety)
+                    const mStr = month.toString().padStart(2, '0');
+                    const dStr = day.toString().padStart(2, '0');
+                    
+                    let entry = `${mStr}-${dStr}`;
+                    if (emoji) {
+                        entry += `|${emoji}`;
                     }
+                    dateEntries.push(entry);
                 }
             });
 
