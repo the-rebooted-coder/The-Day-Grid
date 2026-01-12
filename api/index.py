@@ -365,14 +365,6 @@ HTML_DASHBOARD = """
                 </label>
             </div>
 
-            <div class="toggle-container" style="margin-top: 10px;">
-                <span class="toggle-label">Preview Device</span>
-                <select id="device-select" onchange="updateMockupStyle()" style="width: auto; padding: 5px; flex-grow: 0;">
-                    <option value="dynamic-island">Modern (Dynamic Island)</option>
-                    <option value="notch">Classic (Notch)</option>
-                </select>
-            </div>
-
             <h2>Progress Bar Style</h2>
             <div style="margin-bottom: 20px;">
                 <select id="bar-style" style="width: 100%">
@@ -576,7 +568,7 @@ HTML_DASHBOARD = """
         function detectDeviceType() {
             // Check logical screen width to guess device family
             const width = window.screen.width;
-            const select = document.getElementById('device-select');
+            const frame = document.getElementById('phone-frame');
             
             let deviceType = 'dynamic-island'; // Default
 
@@ -589,15 +581,8 @@ HTML_DASHBOARD = """
                 deviceType = 'notch';
             }
 
-            select.value = deviceType;
-            updateMockupStyle();
-        }
-
-        function updateMockupStyle() {
-            const type = document.getElementById('device-select').value;
-            const frame = document.getElementById('phone-frame');
-            
-            if (type === 'notch') {
+            // Apply directly
+            if (deviceType === 'notch') {
                 frame.classList.remove('dynamic-island');
                 frame.classList.add('notch');
             } else {
@@ -662,7 +647,7 @@ HTML_DASHBOARD = """
             // 1. Load Saved Data
             loadPreferences();
             
-            // 2. Detect Device Type
+            // 2. Detect Device Type and set Preview
             detectDeviceType();
             
             // 3. Init Title Width & Animation
