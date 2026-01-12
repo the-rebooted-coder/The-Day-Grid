@@ -4,6 +4,7 @@ import calendar
 from PIL import Image, ImageDraw, ImageFont
 import io
 import os
+import urllib.request
 
 app = Flask(__name__)
 
@@ -41,6 +42,32 @@ THEMES = {
 FONT_DIR = os.path.join(os.path.dirname(__file__), 'fonts')
 FONT_PATH = os.path.join(FONT_DIR, 'Roboto-Regular.ttf')
 FONT_SIGNATURE_PATH = os.path.join(FONT_DIR, 'Buffalo.otf')
+
+# --- Helper: Fetch Emoji Image ---
+# In-memory cache to prevent re-downloading the same emoji 50 times in one request
+emoji_cache = {}
+
+def get_emoji_image(emoji_char):
+    """Downloads the PNG representation of an emoji from Twemoji CDN."""
+    if emoji_char in emoji_cache:
+        return emoji_cache[emoji_char]
+    
+    try:
+        # Get hex codepoint (e.g. 🎂 -> 1f382)
+        # We strip variant selectors to match Twemoji filenames
+        codepoint = "-".join([f"{ord(c):x}" for c in emoji_char if ord(c) != 0xfe0f])
+        
+        url = f"https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/72x72/{codepoint}.png"
+        req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
+        
+        with urllib.request.urlopen(req) as response:
+            data = response.read()
+            img = Image.open(io.BytesIO(data)).convert("RGBA")
+            emoji_cache[emoji_char] = img
+            return img
+    except Exception as e:
+        print(f"Failed to download emoji {emoji_char}: {e}")
+        return None
 
 # --- THE DASHBOARD ---
 HTML_DASHBOARD = """
@@ -111,13 +138,14 @@ HTML_DASHBOARD = """
         input[type="date"], input[type="text"], select { background: #2c2c2e; border: 1px solid #444; padding: 10px; border-radius: 8px; color: white; flex-grow: 1; font-family: inherit; font-size: 14px; outline: none; transition: border 0.2s; color-scheme: dark; width: 100%; box-sizing: border-box; }
         input[type="date"]:focus, input[type="text"]:focus, select:focus { border-color: #ff693c; }
         
-        /* SYMBOL INPUT */
-        .symbol-input {
+        .emoji-select {
             flex-grow: 0 !important;
-            width: 60px !important;
+            width: 70px !important;
             text-align: center;
-            font-weight: bold;
-            text-transform: uppercase;
+            font-size: 18px !important;
+            appearance: none;
+            -webkit-appearance: none;
+            cursor: pointer;
         }
 
         .btn-icon { background: #333; border: 1px solid #444; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 18px; flex-shrink: 0; }
@@ -207,11 +235,19 @@ HTML_DASHBOARD = """
             </div>
 
             <h2>Dates of Importance</h2>
-            <p style="font-size: 0.8rem; color: #666; margin: -5px 0 10px 0;">Use letters or simple symbols (e.g. B, $, !)</p>
             <div id="date-list">
                 <div class="date-row">
                     <input type="date" class="date-input">
-                    <input type="text" class="symbol-input" placeholder="★" maxlength="1">
+                    <select class="emoji-select">
+                        <option value="">🟡</option>
+                        <option value="🎂">🎂</option>
+                        <option value="❤️">❤️</option>
+                        <option value="🚀">🚀</option>
+                        <option value="💰">💰</option>
+                        <option value="✈️">✈️</option>
+                        <option value="💀">💀</option>
+                        <option value="🍺">🍺</option>
+                    </select>
                     <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
                 </div>
             </div>
@@ -341,14 +377,27 @@ HTML_DASHBOARD = """
             const container = document.getElementById('date-list');
             const div = document.createElement('div');
             div.className = 'date-row';
-            div.innerHTML = `<input type="date" class="date-input"><input type="text" class="symbol-input" placeholder="★" maxlength="1"><button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>`;
+            div.innerHTML = `
+                <input type="date" class="date-input">
+                <select class="emoji-select">
+                    <option value="">🟡</option>
+                    <option value="🎂">🎂</option>
+                    <option value="❤️">❤️</option>
+                    <option value="🚀">🚀</option>
+                    <option value="💰">💰</option>
+                    <option value="✈️">✈️</option>
+                    <option value="💀">💀</option>
+                    <option value="🍺">🍺</option>
+                </select>
+                <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
+            `;
             container.appendChild(div);
         }
         function removeDate(btn) {
             const container = document.getElementById('date-list');
             if (container.children.length > 1) btn.parentElement.remove();
             else {
-                const inputs = btn.parentElement.querySelectorAll('input');
+                const inputs = btn.parentElement.querySelectorAll('input, select');
                 inputs.forEach(i => i.value = '');
             }
         }
@@ -395,14 +444,14 @@ HTML_DASHBOARD = """
             
             rows.forEach(row => {
                 const dateInput = row.querySelector('.date-input');
-                const symbolInput = row.querySelector('.symbol-input');
+                const emojiSelect = row.querySelector('.emoji-select');
                 
                 if (dateInput.value) {
                     const parts = dateInput.value.split('-'); 
                     if (parts.length === 3) {
                         let entry = `${parts[1]}-${parts[2]}`;
-                        if (symbolInput && symbolInput.value.trim()) {
-                            entry += `|${symbolInput.value.trim()}`;
+                        if (emojiSelect && emojiSelect.value) {
+                            entry += `|${emojiSelect.value}`;
                         }
                         dateEntries.push(entry);
                     }
@@ -519,17 +568,15 @@ def generate_grid():
     
     days_left = total_days - days_passed
 
-    # 5. Parse Special Dates & Symbols
+    # 5. Parse Special Dates & Emojis
     special_dates = {}
     if dates_param:
         items = dates_param.split(',')
         for item in items:
             if '|' in item:
-                d_str, symbol = item.split('|', 1)
-                # Take only first char for safety
-                symbol = symbol.strip()[:1]
+                d_str, emoji = item.split('|', 1)
             else:
-                d_str, symbol = item, None
+                d_str, emoji = item, None
             
             try:
                 parts = d_str.strip().split('-')
@@ -537,7 +584,7 @@ def generate_grid():
                     m, d = int(parts[0]), int(parts[1])
                     try:
                         date_obj = datetime.date(current_year, m, d)
-                        special_dates[date_obj] = symbol
+                        special_dates[date_obj] = emoji
                     except ValueError: pass
             except ValueError: pass
 
@@ -548,11 +595,8 @@ def generate_grid():
     # Fonts
     try:
         font_small = ImageFont.truetype(FONT_PATH, 40)
-        # Font for the symbol inside the dot
-        font_symbol = ImageFont.truetype(FONT_PATH, int(dot_radius * 1.3))
     except:
         font_small = ImageFont.load_default()
-        font_symbol = font_small
 
     try:
         font_signature = ImageFont.truetype(FONT_SIGNATURE_PATH, 55)
@@ -581,36 +625,36 @@ def generate_grid():
                 break
             
             draw_color = palette['INACTIVE']
-            symbol_char = None
+            draw_emoji_img = None
             
             if current_iter_date in special_dates:
-                # If symbol provided, use Gold dot + BG Color Text
-                symbol_char = special_dates[current_iter_date]
-                draw_color = palette['SPECIAL']
+                emoji_char = special_dates[current_iter_date]
+                if emoji_char:
+                    # Download the image from CDN
+                    draw_emoji_img = get_emoji_image(emoji_char)
+                    # If download fails, fallback to Gold color
+                    if not draw_emoji_img:
+                        draw_color = palette['SPECIAL']
+                else:
+                    draw_color = palette['SPECIAL']
             elif current_iter_date == now.date():
                 draw_color = palette['ACTIVE']
             elif current_iter_date < now.date():
                 draw_color = palette['PASSED']
 
-            x = start_x + col * (dot_radius * 2 + DOT_SPACING)
-            y = start_y + row * (dot_radius * 2 + DOT_SPACING)
+            x = int(start_x + col * (dot_radius * 2 + DOT_SPACING))
+            y = int(start_y + row * (dot_radius * 2 + DOT_SPACING))
 
-            # Draw the dot
-            draw.ellipse((x, y, x + dot_radius * 2, y + dot_radius * 2), fill=draw_color)
-
-            # Draw the "Cutout" Symbol if it exists
-            if symbol_char:
-                try:
-                    bbox = draw.textbbox((0, 0), symbol_char, font=font_symbol)
-                    text_w = bbox[2] - bbox[0]
-                    text_h = bbox[3] - bbox[1]
-                    # Center text in circle
-                    text_x = x + dot_radius - (text_w / 2)
-                    text_y = y + dot_radius - (text_h / 2) - (dot_radius * 0.2)
-                    # "Cutout" effect: Draw text in background color
-                    draw.text((text_x, text_y), symbol_char, font=font_symbol, fill=palette['BG'])
-                except:
-                    pass
+            if draw_emoji_img:
+                # Resize emoji to fit in the dot area
+                target_size = (dot_radius * 2, dot_radius * 2)
+                # High-quality resize
+                emoji_resized = draw_emoji_img.resize(target_size, Image.Resampling.LANCZOS)
+                
+                # We use the alpha channel of the emoji as a mask
+                img.paste(emoji_resized, (x, y), emoji_resized)
+            else:
+                draw.ellipse((x, y, x + dot_radius * 2, y + dot_radius * 2), fill=draw_color)
             
             current_iter_date += datetime.timedelta(days=1)
 
