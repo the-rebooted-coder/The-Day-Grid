@@ -954,8 +954,12 @@ def generate_grid():
         TOTAL_CONTENT_WIDTH = (COLS * BLOCK_WIDTH) + ((COLS - 1) * BLOCK_GAP_X)
         START_X_GLOBAL = (IMAGE_WIDTH - TOTAL_CONTENT_WIDTH) // 2
         
-        BLOCK_GAP_Y = 120
-        START_Y_GLOBAL = 350 # Top margin
+        # Vertical Tuning (User Request)
+        # Previous START_Y_GLOBAL was 350 (too high)
+        START_Y_GLOBAL = 750 # Lowered to clear the clock area
+        
+        # Previous row step was 400 (too gapped)
+        ROW_HEIGHT_STEP = 340 # Tightened vertical spacing
         
         month_names = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
         
@@ -968,7 +972,7 @@ def generate_grid():
             col_idx = idx % COLS
             
             month_start_x = START_X_GLOBAL + col_idx * (BLOCK_WIDTH + BLOCK_GAP_X)
-            month_start_y = START_Y_GLOBAL + row_idx * (400) # Fixed height per row area
+            month_start_y = START_Y_GLOBAL + row_idx * (ROW_HEIGHT_STEP) 
             
             # Draw Month Name
             draw.text((month_start_x, month_start_y - 60), month_names[idx], font=font_small, fill=palette['INACTIVE'])
@@ -1013,8 +1017,8 @@ def generate_grid():
                 else:
                     draw.ellipse((x, y, x + MONTH_DOT_RADIUS * 2, y + MONTH_DOT_RADIUS * 2), fill=draw_color)
         
-        # Determine text Y for footer elements
-        grid_bottom_y = START_Y_GLOBAL + 3 * 400 + 250 
+        # Determine text Y for footer elements relative to the last row
+        grid_bottom_y = START_Y_GLOBAL + (3 * ROW_HEIGHT_STEP) + 220
 
     else:
         # --- ORIGINAL MODES (Year, Quarter, Month, Fortnight) ---
