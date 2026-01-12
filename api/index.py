@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw, ImageFont
 import io
 import os
 import urllib.request
+import json
 
 app = Flask(__name__)
 
@@ -25,6 +26,7 @@ THEMES = {
         'ACTIVE': (255, 105, 60),    # Orange
         'PASSED': (255, 255, 255),   # White
         'INACTIVE': (68, 68, 70),    # Dim Gray
+        'WEEKEND': (44, 44, 46),     # Darker Gray for Weekends
         'SPECIAL': (255, 215, 0),    # Gold
         'TEXT': (255, 255, 255)      # White Text
     },
@@ -33,6 +35,7 @@ THEMES = {
         'ACTIVE': (255, 105, 60),    # Orange
         'PASSED': (60, 60, 67),      # Dark Gray (Completed)
         'INACTIVE': (209, 209, 214), # Light Gray (Future)
+        'WEEKEND': (229, 229, 234),  # Slightly different gray
         'SPECIAL': (255, 204, 0),    # Gold
         'TEXT': (0, 0, 0)            # Black Text
     }
@@ -114,7 +117,6 @@ HTML_DASHBOARD = """
         
         /* Title Animation CSS */
         #animated-title {
-            /* Smooth width transition handles the sliding of "The" */
             transition: width 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.2s ease-in-out;
             opacity: 1;
             display: inline-flex;
@@ -123,11 +125,10 @@ HTML_DASHBOARD = """
             vertical-align: middle;
             overflow: hidden;
             white-space: nowrap;
-            height: 40px; /* Fixed height to prevent vertical jitter */
+            height: 40px;
             cursor: pointer;
         }
         
-        /* Hidden Ruler for measuring text width */
         #ruler {
             visibility: hidden;
             position: absolute;
@@ -209,6 +210,16 @@ HTML_DASHBOARD = """
             padding-top: 5px;
         }
 
+        /* Toggle Switch CSS */
+        .toggle-container { display: flex; align-items: center; justify-content: space-between; background: #2c2c2e; padding: 12px; border-radius: 8px; border: 1px solid #444; margin-bottom: 20px; }
+        .toggle-label { font-size: 14px; font-weight: 500; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #444; -webkit-transition: .4s; transition: .4s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 2px; bottom: 2px; background-color: white; -webkit-transition: .4s; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: #ff693c; }
+        input:checked + .slider:before { transform: translateX(20px); }
+
         .btn-icon { background: #333; border: 1px solid #444; width: 38px; height: 38px; border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: #ff693c; font-size: 18px; flex-shrink: 0; }
         .btn-icon:hover { background: #444; }
 
@@ -232,9 +243,38 @@ HTML_DASHBOARD = """
         .url-box { background: #000; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 13px; color: #ff693c; border: 1px solid #333; flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .copy-btn { background: #333; border: 1px solid #444; border-radius: 8px; cursor: pointer; color: white; padding: 0 15px; font-weight: bold; transition: background 0.2s; }
         
+        /* IPHONE MOCKUP CSS */
+        .iphone-mockup {
+            width: 280px;
+            aspect-ratio: 9 / 19.5;
+            background: #000;
+            border-radius: 40px;
+            border: 8px solid #2b2b2b;
+            position: relative;
+            margin: 20px auto;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+        .dynamic-island {
+            width: 80px;
+            height: 24px;
+            background: #000;
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-radius: 20px;
+            z-index: 10;
+        }
+        .mockup-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
         .shortcut-section { margin-top: 20px; background: #2c2c2e; padding: 15px; border-radius: 12px; border: 1px solid #444; }
         .shortcut-btn { background: white; color: black; display: block; width: 100%; padding: 12px; border-radius: 8px; font-weight: bold; text-decoration: none; margin-top: 10px; box-sizing: border-box; }
-        a.preview-link { color: #ff693c; text-decoration: none; font-weight: 600; display: inline-block; margin-top: 10px; font-size: 0.9rem; }
         
         footer { margin-top: auto; color: #555; font-family: 'Courier New', monospace; font-size: 13px; opacity: 0.8; padding-bottom: 10px; width: 100%; text-align: center; }
         .footer-link { color: #555; text-decoration: none; border-bottom: 1px dotted #555; transition: color 0.2s; }
@@ -288,6 +328,15 @@ HTML_DASHBOARD = """
                 </select>
             </div>
 
+            <h2>Visuals</h2>
+            <div class="toggle-container">
+                <span class="toggle-label">Highlight Weekends</span>
+                <label class="switch">
+                    <input type="checkbox" id="weekend-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+
             <h2>Progress Bar Style</h2>
             <div style="margin-bottom: 20px;">
                 <select id="bar-style" style="width: 100%">
@@ -332,7 +381,11 @@ HTML_DASHBOARD = """
                     <div class="url-box" id="urlBox"></div>
                     <button class="copy-btn" onclick="copyToClipboard()">Copy</button>
                 </div>
-                <a class="preview-link" id="previewLink" href="#" target="_blank">Preview Wallpaper →</a>
+            </div>
+
+            <div class="iphone-mockup">
+                <div class="dynamic-island"></div>
+                <img id="mockup-img" class="mockup-img" src="" alt="Preview">
             </div>
 
             <div class="shortcut-section">
@@ -347,7 +400,7 @@ HTML_DASHBOARD = """
 
     <footer>
         &lt;/&gt; with ❤️ by Spandan.<br>
-        <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="footer-link" style="font-size: 11px; margin-top: 5px; display: inline-block;">Version 2.0 Prod.</a>
+        <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="footer-link" style="font-size: 11px; margin-top: 5px; display: inline-block;">Version 3.0 Prod.</a>
         <div class="labs-product">An S² Labs Product 🥼</div>
     </footer>
 
@@ -377,32 +430,96 @@ HTML_DASHBOARD = """
     </div>
 
     <script>
-        // --- Helper to build Month/Day Options ---
         const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         
-        function getMonthOptionsHtml() {
-            let html = '<option value="" disabled selected>Month</option>';
+        function getMonthOptionsHtml(selected) {
+            let html = '<option value="" disabled ' + (!selected ? 'selected' : '') + '>Month</option>';
             MONTHS.forEach((m, i) => {
-                html += `<option value="${i + 1}">${m}</option>`;
+                const val = i + 1;
+                const isSel = val == selected ? 'selected' : '';
+                html += `<option value="${val}" ${isSel}>${m}</option>`;
             });
             return html;
         }
 
-        function getDayOptionsHtml() {
-            let html = '<option value="" disabled selected>Day</option>';
+        function getDayOptionsHtml(selected) {
+            let html = '<option value="" disabled ' + (!selected ? 'selected' : '') + '>Day</option>';
             for (let i = 1; i <= 31; i++) {
-                html += `<option value="${i}">${i}</option>`;
+                const isSel = i == selected ? 'selected' : '';
+                html += `<option value="${i}" ${isSel}>${i}</option>`;
             }
             return html;
         }
 
-        function getEmojiOptionsHtml() {
+        function getEmojiOptionsHtml(selected) {
             const emojis = ["🟡", "🍰", "❤️", "🚀", "💰", "✈️", "💀", "🍺"];
             let html = "";
             emojis.forEach(e => {
-                html += `<option value="${e === '🟡' ? '' : e}">${e}</option>`;
+                const val = e === '🟡' ? '' : e;
+                const isSel = val === selected ? 'selected' : '';
+                html += `<option value="${val}" ${isSel}>${e}</option>`;
             });
             return html;
+        }
+
+        // --- LOCAL STORAGE LOGIC ---
+        function savePreferences() {
+            const prefs = {
+                viewMode: document.getElementById('view-mode').value,
+                barStyle: document.getElementById('bar-style').value,
+                highlightWeekends: document.getElementById('weekend-toggle').checked,
+                theme: selectedTheme,
+                signature: document.getElementById('signature').value,
+                dates: []
+            };
+            
+            // Collect Dates
+            const rows = document.querySelectorAll('.date-row');
+            rows.forEach(row => {
+                const m = row.querySelector('.month-select').value;
+                const d = row.querySelector('.day-select').value;
+                const e = row.querySelector('.emoji-select').value;
+                if(m || d || e) {
+                    prefs.dates.push({m: m, d: d, e: e});
+                }
+            });
+            
+            localStorage.setItem('grid_prefs_v3', JSON.stringify(prefs));
+        }
+
+        function loadPreferences() {
+            const stored = localStorage.getItem('grid_prefs_v3');
+            if (!stored) {
+                addDate(); // Default empty row
+                return;
+            }
+
+            try {
+                const prefs = JSON.parse(stored);
+                
+                // Set Fields
+                if(prefs.viewMode) document.getElementById('view-mode').value = prefs.viewMode;
+                if(prefs.barStyle) document.getElementById('bar-style').value = prefs.barStyle;
+                if(prefs.highlightWeekends !== undefined) document.getElementById('weekend-toggle').checked = prefs.highlightWeekends;
+                if(prefs.theme) setTheme(prefs.theme);
+                if(prefs.signature) document.getElementById('signature').value = prefs.signature;
+
+                // Rebuild Dates
+                const container = document.getElementById('date-list');
+                container.innerHTML = ''; // Clear existing
+                
+                if (prefs.dates && prefs.dates.length > 0) {
+                    prefs.dates.forEach(d => {
+                        addDate(d.m, d.d, d.e);
+                    });
+                } else {
+                    addDate();
+                }
+
+            } catch (e) {
+                console.error("Failed to load prefs", e);
+                addDate();
+            }
         }
 
         // --- TITLE ANIMATION ---
@@ -415,7 +532,6 @@ HTML_DASHBOARD = """
             const el = document.getElementById('animated-title');
             const ruler = document.getElementById('ruler');
             
-            // Sequence: White -> Orange -> Gray -> Text (Stops)
             const seq = [
                 { type: 'html', content: '<span class="dot white title-dot"></span>', time: 700 },
                 { type: 'html', content: '<span class="dot orange title-dot"></span>', time: 700 },
@@ -426,70 +542,57 @@ HTML_DASHBOARD = """
             let i = 0;
             
             function step() {
-                // 1. Measure Width of Next Content using Ruler
                 const item = seq[i];
                 if (item.type === 'text') ruler.innerText = item.content;
                 else ruler.innerHTML = item.content;
                 
                 const newWidth = ruler.offsetWidth;
 
-                // 2. Fade Out
                 el.style.opacity = 0;
                 
                 setTimeout(() => {
-                    // 3. Set Width (Triggers Smooth Slide) & Change Content
                     el.style.width = newWidth + 'px';
                     
                     if (item.type === 'text') el.innerText = item.content;
                     else el.innerHTML = item.content;
                     
-                    // 4. Fade In
                     el.style.opacity = 1;
                     
-                    // 5. Next Step
                     i++;
                     if (i < seq.length) {
                         setTimeout(step, item.time);
                     } else {
                         isAnimating = false;
-                        // Keep width explicit or reset to auto if needed (keeping explicit prevents jump)
                     }
                     
-                }, 200); // Wait for opacity fade out
+                }, 200); 
             }
-            
-            // Start the sequence
             step();
         }
         
-        function replayAnimation() {
-            animateTitle();
-        }
+        function replayAnimation() { animateTitle(); }
 
         window.onload = function() {
             const isApple = /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
             
-            // Initial Date Row
-            addDate();
+            // Load Saved Data
+            loadPreferences();
             
-            // Initialize width of the text so the first shrinkage is smooth
+            // Init Title Width
             const el = document.getElementById('animated-title');
             const ruler = document.getElementById('ruler');
             ruler.innerText = "Grid.";
             el.style.width = ruler.offsetWidth + 'px';
             
-            // Start Animation
             setTimeout(animateTitle, 2000);
 
             if (!isApple) {
                 const btn = document.getElementById('default-btn');
                 btn.innerText = "Sorry, currently available only on iOS / iPadOS";
                 btn.disabled = true;
-                
                 document.querySelector('.separator').style.display = 'none';
                 document.querySelector('.customise-trigger').style.display = 'none';
                 document.getElementById('custom-section').style.display = 'none';
-                
                 document.querySelector('footer').style.marginTop = 'auto';
             }
         };
@@ -524,16 +627,16 @@ HTML_DASHBOARD = """
             }
         }
 
-        function addDate() {
+        function addDate(selM, selD, selE) {
             const container = document.getElementById('date-list');
             const div = document.createElement('div');
             div.className = 'date-row';
             div.innerHTML = `
                 <div class="date-picker-group">
-                    <select class="month-select">${getMonthOptionsHtml()}</select>
-                    <select class="day-select">${getDayOptionsHtml()}</select>
+                    <select class="month-select">${getMonthOptionsHtml(selM)}</select>
+                    <select class="day-select">${getDayOptionsHtml(selD)}</select>
                 </div>
-                <select class="emoji-select">${getEmojiOptionsHtml()}</select>
+                <select class="emoji-select">${getEmojiOptionsHtml(selE)}</select>
                 <button class="btn-icon btn-remove" onclick="removeDate(this)">×</button>
             `;
             container.appendChild(div);
@@ -543,7 +646,6 @@ HTML_DASHBOARD = """
             const container = document.getElementById('date-list');
             if (container.children.length > 1) btn.parentElement.remove();
             else {
-                // Reset inputs if it's the last row
                 const selects = btn.parentElement.querySelectorAll('select');
                 selects.forEach(s => s.selectedIndex = 0);
             }
@@ -571,7 +673,9 @@ HTML_DASHBOARD = """
                 document.getElementById('mock-msg').style.display = "none";
                 document.getElementById('custom-url-display').style.display = "none";
                 document.getElementById('custom-section').style.display = "none";
-                document.querySelector('.customise-trigger').classList.remove('active');
+                
+                // Show Mockup even for default
+                document.getElementById('mockup-img').src = fullUrl;
                 
                 document.getElementById('result').scrollIntoView({ behavior: 'smooth' });
 
@@ -586,6 +690,9 @@ HTML_DASHBOARD = """
         }
 
         function generateCustom() {
+            // 1. Save State
+            savePreferences();
+
             const rows = document.querySelectorAll('.date-row');
             let dateEntries = [];
             
@@ -609,6 +716,7 @@ HTML_DASHBOARD = """
             const sig = document.getElementById('signature').value.trim();
             const mode = document.getElementById('view-mode').value;
             const barStyle = document.getElementById('bar-style').value;
+            const highlightWeekends = document.getElementById('weekend-toggle').checked;
             
             const val = dateEntries.join(',');
             
@@ -620,9 +728,13 @@ HTML_DASHBOARD = """
             if (sig) params.append('signature', sig);
             if (mode !== 'year') params.append('mode', mode);
             if (barStyle !== 'segmented') params.append('bar_style', barStyle);
+            if (highlightWeekends) params.append('highlight_weekends', 'true');
             
             const fullUrl = baseUrl + "?" + params.toString();
-            const isDefault = dateEntries.length === 0 && selectedTheme === 'dark' && sig === '' && mode === 'year' && barStyle === 'segmented';
+            const isDefault = dateEntries.length === 0 && selectedTheme === 'dark' && sig === '' && mode === 'year' && barStyle === 'segmented' && !highlightWeekends;
+
+            // Set Mockup Image
+            document.getElementById('mockup-img').src = fullUrl;
 
             if (isDefault) {
                 navigator.clipboard.writeText(fullUrl).then(() => {
@@ -634,7 +746,6 @@ HTML_DASHBOARD = """
                 });
             } else {
                 document.getElementById('urlBox').innerText = fullUrl;
-                document.getElementById('previewLink').href = fullUrl;
                 document.getElementById('result').style.display = "block";
                 document.getElementById('default-success').style.display = "none";
                 document.getElementById('mock-msg').style.display = "none";
@@ -675,6 +786,7 @@ def generate_grid():
     signature_param = request.args.get('signature', '')
     mode_param = request.args.get('mode', 'year')
     bar_style_param = request.args.get('bar_style', 'segmented')
+    highlight_weekends_param = request.args.get('highlight_weekends', 'false') == 'true'
 
     # 2. Select Theme Colors
     palette = THEMES.get(theme_param, THEMES['dark'])
@@ -777,7 +889,13 @@ def generate_grid():
             if current_iter_date > end_date:
                 break
             
+            # Default Color
             draw_color = palette['INACTIVE']
+            
+            # Weekend Check (Saturday=5, Sunday=6)
+            if highlight_weekends_param and current_iter_date.weekday() >= 5:
+                draw_color = palette['WEEKEND']
+            
             draw_emoji_img = None
             
             if current_iter_date in special_dates:
