@@ -476,13 +476,13 @@ HTML_DASHBOARD = """
             <h3>Version 3.1 Notes</h3>
             <ul class="release-list">
                 <li><strong>Emoji Chooser:</strong> Because a colored dot wasn't "aesthetic" enough for your Instagram story. Send your "thanks" to <a href="https://www.instagram.com/im.amitpatwa" target="_blank" style="color: #ff693c; text-decoration: none;">Amit</a> for the extra bloat.</li>
-                <li><strong>Goldfish Memory Patch:</strong> The app now remembers your settings and dates locally. Because apparently, typing your own name more than once is too much to ask of you.</li>
                 <li><strong>We Killed the 'Year' Input:</strong> It's an annual calendar, Einstein. Stop trying to schedule things for 2027.</li>
+                <li><strong>Goldfish Memory Patch:</strong> The app now remembers your settings and dates locally. Because apparently, typing your own name more than once is too much to ask of you.</li>
                 <li><strong>Live Signature:</strong> Type your name. See it appear. It's not magic, it's JavaScript. Try not to be impressed.</li>
                 <li><strong>Weekend Highlight:</strong> Visual proof that you only live for 28% of your life.</li>
                 <li><strong>Smart Device Detection:</strong> We know what iPhone you have. If you have a Notch, we judge you. If you have an Island, we judge you harder.</li>
                 <li><strong>Segregated Months:</strong> A new view for those easily overwhelmed by 365 dots. Deep breaths.</li>
-                <li><strong>Layout Fixes:</strong> Fixed the Full Year view alignment. It used to look terrible. Now it looks slightly less terrible.</li>
+                <li><strong>Layout Fixes:</strong> Fixed the Full Year view alignment. It used to look terrible. Now it looks slightly less terrible. Thanks to <a href="https://www.linkedin.com/in/kartikeya-srivastava-b527901a4/?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app" target="_blank" style="color: #ff693c; text-decoration: none;">Kartikey</a> for pointing out the UI inconsistency we were praying you wouldn't notice.</li>
             </ul>
             <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="github-btn">View Source on GitHub</a>
             <button class="close-modal" onclick="toggleReleaseModal(false)">Close</button>
