@@ -354,7 +354,7 @@ HTML_DASHBOARD = """
 
         function generateDefault() {
             const baseUrl = window.location.origin + "/api/image";
-            const fullUrl = baseUrl + "?theme=dark&mode=year&bar_style=segmented";
+            const fullUrl = baseUrl + "?theme=dark";
             const btn = document.getElementById('default-btn');
             
             navigator.clipboard.writeText(fullUrl).then(() => {
@@ -562,8 +562,8 @@ def generate_grid():
     
     # VERTICAL ALIGNMENT FIX
     if mode_param == 'year':
-        # Shift up for the tall year grid
-        start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2) - 200 
+        # Shift DOWN for the tall year grid to avoid the clock
+        start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2) + 150 
     else:
         # True Center for smaller grids (Month, Quarter, Fortnight)
         start_y = (IMAGE_HEIGHT // 2) - (total_grid_h // 2)
