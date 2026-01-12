@@ -476,6 +476,7 @@ HTML_DASHBOARD = """
             <h3>Version 3.1 Notes</h3>
             <ul class="release-list">
                 <li><strong>Emoji Chooser:</strong> Because a colored dot wasn't "aesthetic" enough for your Instagram story. Send your "thanks" to <a href="https://www.instagram.com/im.amitpatwa" target="_blank" style="color: #ff693c; text-decoration: none;">Amit</a> for the extra bloat.</li>
+                <li><strong>Goldfish Memory Patch:</strong> The app now remembers your settings and dates locally. Because apparently, typing your own name more than once is too much to ask of you.</li>
                 <li><strong>We Killed the 'Year' Input:</strong> It's an annual calendar, Einstein. Stop trying to schedule things for 2027.</li>
                 <li><strong>Live Signature:</strong> Type your name. See it appear. It's not magic, it's JavaScript. Try not to be impressed.</li>
                 <li><strong>Weekend Highlight:</strong> Visual proof that you only live for 28% of your life.</li>
