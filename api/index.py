@@ -6,6 +6,7 @@ import io
 import os
 import urllib.request
 import json
+import math
 
 app = Flask(__name__)
 
@@ -69,6 +70,15 @@ def get_emoji_image(emoji_char):
     except Exception as e:
         print(f"Failed to download emoji {emoji_char}: {e}")
         return None
+
+def get_moon_phase(date):
+    """Returns the moon phase (0.0 to 1.0) where 0.0=New, 0.5=Full."""
+    # Reference New Moon: January 6, 2000
+    ref_date = datetime.date(2000, 1, 6)
+    days_passed = (date - ref_date).days
+    synodic_month = 29.53058867
+    phase = (days_passed % synodic_month) / synodic_month
+    return phase
 
 # --- THE DASHBOARD ---
 HTML_DASHBOARD = """
@@ -303,20 +313,7 @@ HTML_DASHBOARD = """
         .labs-product { font-size: 10px; color: #555; margin-top: 8px; font-weight: 600; letter-spacing: 0.5px; }
 
         .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(5px); z-index: 1000; display: none; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s; }
-        .modal { 
-            background: #1c1c1e; 
-            border: 1px solid #333; 
-            padding: 25px; 
-            border-radius: 16px; 
-            width: 90%; 
-            max-width: 320px; 
-            transform: scale(0.9); 
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5); 
-            max-height: 70vh; /* Reduced from 80vh for safe top margin */
-            overflow-y: auto; 
-        }
-        
+        .modal { background: #1c1c1e; border: 1px solid #333; padding: 25px; border-radius: 16px; width: 90%; max-width: 320px; transform: scale(0.9); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .modal h3 { margin-top: 0; color: white; text-align: center; }
         
         .color-legend { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
@@ -385,6 +382,7 @@ HTML_DASHBOARD = """
                     <option value="segmented">Segmented (Default)</option>
                     <option value="solid">Solid</option>
                     <option value="minimal">Minimal</option>
+                    <option value="lunar">Lunar Phase 🌑</option>
                 </select>
             </div>
 
@@ -442,7 +440,7 @@ HTML_DASHBOARD = """
 
     <footer>
         &lt;/&gt; with ❤️ by Spandan.<br>
-        <span onclick="openReleaseModal()" class="footer-link">Version 3.1 Prod.</span>
+        <span onclick="openReleaseModal()" class="footer-link">Version 3.2 Prod.</span>
         <div class="labs-product">An S² Labs Product 🥼</div>
     </footer>
 
@@ -473,9 +471,9 @@ HTML_DASHBOARD = """
 
     <div class="modal-overlay" id="releaseModalOverlay" onclick="closeReleaseModal(event)">
         <div class="modal">
-            <h3>Version 3.1 Notes</h3>
+            <h3>Version 3.2 Notes</h3>
             <ul class="release-list">
-                <li><strong>Emoji Chooser:</strong> Because a colored dot wasn't "aesthetic" enough for your Instagram story. Send your "thanks" to <a href="https://www.instagram.com/im.amitpatwa" target="_blank" style="color: #ff693c; text-decoration: none;">Amit</a> for the extra bloat.</li>
+		<li><strong>Emoji Chooser:</strong> Because a colored dot wasn't "aesthetic" enough for your Instagram story. Send your "thanks" to <a href="https://www.instagram.com/im.amitpatwa" target="_blank" style="color: #ff693c; text-decoration: none;">Amit</a> for the extra bloat.</li>
                 <li><strong>We Killed the 'Year' Input:</strong> It's an annual calendar, Einstein. Stop trying to schedule things for 2027.</li>
                 <li><strong>Goldfish Memory Patch:</strong> The app now remembers your settings and dates locally. Because apparently, typing your own name more than once is too much to ask of you.</li>
                 <li><strong>Live Signature:</strong> Type your name. See it appear. It's not magic, it's JavaScript. Try not to be impressed.</li>
@@ -483,6 +481,10 @@ HTML_DASHBOARD = """
                 <li><strong>Smart Device Detection:</strong> We know what iPhone you have. If you have a Notch, we judge you. If you have an Island, we judge you harder.</li>
                 <li><strong>Segregated Months:</strong> A new view for those easily overwhelmed by 365 dots. Deep breaths.</li>
                 <li><strong>Layout Fixes:</strong> Fixed the Full Year view alignment. It used to look terrible. Now it looks slightly less terrible. Thanks to <a href="https://www.linkedin.com/in/kartikeya-srivastava-b527901a4/?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app" target="_blank" style="color: #ff693c; text-decoration: none;">Kartikey</a> for pointing out the UI inconsistency we were praying you wouldn't notice.</li>
+                <li><strong>Lunar Astronomy:</strong> A new progress bar style that shows the actual moon phase of the current date.</li>
+                <li><strong>Auto-Device Detection:</strong> The preview now automatically detects if your iPhone has a Notch or a Dynamic Island.</li>
+                <li><strong>Streamlined UI:</strong> Removed manual device selector for a cleaner look.</li>
+                <li><strong>Remember Me:</strong> Your settings, dates, and signature now auto-save locally.</li>
             </ul>
             <a href="https://github.com/the-rebooted-coder/The-Day-Grid/tree/main" target="_blank" class="github-btn">View Source on GitHub</a>
             <button class="close-modal" onclick="toggleReleaseModal(false)">Close</button>
@@ -588,19 +590,16 @@ HTML_DASHBOARD = """
             const width = window.screen.width;
             const frame = document.getElementById('phone-frame');
             
-            let deviceType = 'dynamic-island'; // Default
+            let isNotch = false;
 
             // Heuristic based on logical width
-            // 393/430 = Dynamic Island (14 Pro, 15, 16)
             // 390/428/375/414 = Notch (12, 13, 14, 11, X)
-            if (width === 393 || width === 430) {
-                deviceType = 'dynamic-island';
-            } else if (width === 390 || width === 428 || width === 375 || width === 414) {
-                deviceType = 'notch';
+            // Anything else defaults to Dynamic Island (14 Pro, 15, 16, or Desktop/Android)
+            if (width === 390 || width === 428 || width === 375 || width === 414) {
+                isNotch = true;
             }
 
-            // Apply directly
-            if (deviceType === 'notch') {
+            if (isNotch) {
                 frame.classList.remove('dynamic-island');
                 frame.classList.add('notch');
             } else {
@@ -665,7 +664,7 @@ HTML_DASHBOARD = """
             // 1. Load Saved Data
             loadPreferences();
             
-            // 2. Detect Device Type and set Preview
+            // 2. Detect Device Type
             detectDeviceType();
             
             // 3. Init Title Width & Animation
@@ -1191,6 +1190,36 @@ def generate_grid():
         fill_width = int(BAR_TOTAL_WIDTH * progress_ratio)
         if fill_width > 0:
             draw.rounded_rectangle((bar_start_x, bar_start_y, bar_start_x + fill_width, bar_start_y + BAR_HEIGHT), radius=3, fill=palette['ACTIVE'])
+    elif bar_style_param == 'lunar':
+        # 1. Draw Track (Orbit)
+        orbit_y = bar_start_y + 10
+        draw.line((bar_start_x, orbit_y, bar_start_x + BAR_TOTAL_WIDTH, orbit_y), fill=palette['INACTIVE'], width=2)
+
+        fill_width = int(BAR_TOTAL_WIDTH * progress_ratio)
+
+        # 2. Draw Progress (Trajectory)
+        if fill_width > 0:
+            draw.line((bar_start_x, orbit_y, bar_start_x + fill_width, orbit_y), fill=palette['ACTIVE'], width=2)
+
+        # 3. Draw The Moon at current position
+        moon_x = bar_start_x + fill_width
+        moon_y = orbit_y
+        moon_r = 12
+        BAR_HEIGHT = 20 # For signature spacing
+
+        # Calculate Phase (0.0 to 1.0)
+        phase = get_moon_phase(now.date())
+
+        # Draw basic circle background (dark side)
+        draw.ellipse((moon_x - moon_r, moon_y - moon_r, moon_x + moon_r, moon_y + moon_r), fill=(20, 20, 20), outline=palette['ACTIVE'], width=1)
+
+        # Draw lit part (simplified visual representation of phase)
+        # Full Moon (approx 0.45-0.55) -> Yellow Fill
+        if 0.45 <= phase <= 0.55:
+                draw.ellipse((moon_x - moon_r, moon_y - moon_r, moon_x + moon_r, moon_y + moon_r), fill=palette['SPECIAL'])
+        # Else just a smaller dot indicator for now 
+        else:
+                draw.ellipse((moon_x - 4, moon_y - 4, moon_x + 4, moon_y + 4), fill=palette['ACTIVE'])
     else:
         BAR_HEIGHT = 20
         BAR_BLOCKS = 10
